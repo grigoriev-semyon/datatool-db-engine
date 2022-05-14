@@ -5,11 +5,12 @@ from sqlalchemy import create_engine, MetaData, Table, Integer, String, \
     Column, DateTime, ForeignKey, Numeric
 from datetime import datetime
 from settings import Settings
+settings = Settings()
 
-engine = create_engine()
+engine = create_engine(settings.DB_DSN)
 
 Base = declarative_base()
-settings = Settings()
+
 
 
 def create_table(name: str) -> int:
@@ -37,7 +38,7 @@ def create_table(name: str) -> int:
         table_id: Column(Integer)
 
     class DBColumnAttributes(DBColumn, DBAttributes):
-        attribute_id = Column(Integer, ForeignKey('DBAttributes.if'))
+        attribute_id = Column(Integer, ForeignKey('DBAttributes.id'))
         entity_id = Column(Integer, ForeignKey('DBEntity.id'), primary_key=True)
         name: Column(String)
         datatype: Column(String)
