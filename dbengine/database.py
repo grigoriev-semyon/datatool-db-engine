@@ -38,7 +38,7 @@ class DbTable(DbEntity):
 
 class DbColumn(DbEntity):
     id = Column(Integer, ForeignKey("db_entity.id"), primary_key=True)
-    table_id = Column(Integer)
+    table_id = Column(Integer, ForeignKey("db_table.id"))
 
     __mapper_args__ = {"polymorphic_identity": "COLUMN"}
 
