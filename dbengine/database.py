@@ -32,12 +32,12 @@ class DbEntity(Base):
 
 
 class DbTable(DbEntity):
-    entity_id = Column(Integer, ForeignKey("db_entity.id"), primary_key=True)
+    id = Column(Integer, ForeignKey("db_entity.id"), primary_key=True)
     __mapper_args__ = {"polymorphic_identity": "TABLE"}
 
 
 class DbColumn(DbEntity):
-    entity_id = Column(Integer, ForeignKey("db_entity.id"), primary_key=True)
+    id = Column(Integer, ForeignKey("db_entity.id"), primary_key=True)
     table_id = Column(Integer)
 
     __mapper_args__ = {"polymorphic_identity": "COLUMN"}
@@ -52,14 +52,16 @@ class DbAttributes(Base):
 
 
 class DbTableAttributes(DbAttributes):
-    entity_id = Column(Integer, ForeignKey("db_attributes.id"), primary_key=True)
+    id = Column(Integer, ForeignKey("db_attributes.id"), primary_key=True)
+    table_id = Column(Integer, ForeignKey("db_table.id"))
     path = Column(String)
 
     __mapper_args__ = {"polymorphic_identity": "TABLE"}
 
 
 class DbColumnAttributes(DbAttributes):
-    entity_id = Column(Integer, ForeignKey("db_attributes.id"), primary_key=True)
+    id = Column(Integer, ForeignKey("db_attributes.id"), primary_key=True)
+    column_id = Column(Integer, ForeignKey("db_column.id"))
     name = Column(String)
     datatype = Column(String)
 
