@@ -74,7 +74,7 @@ class Branch(Base):
     id = Column(Integer, primary_key=True)
     type = Column(String, default="MAIN")
     name = Column(String)
-    create_ts = Column(DateTime, default=datetime.utcnow(), nullable=False)
+    create_ts = Column(DateTime, default=datetime.utcnow, nullable=False)
     __mapper_args__ = {"polymorphic_identity": type}
 
 
@@ -85,7 +85,7 @@ class Commit(Base):
     branch_id = Column(Integer, ForeignKey("branch.id"))
     attribute_id_in = Column(Integer)
     attribute_id_out = Column(Integer)
-    create_ts = Column(DateTime, default=datetime.utcnow(), nullable=False)
+    create_ts = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 
 def create_tables():
