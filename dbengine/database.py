@@ -71,18 +71,18 @@ class DbColumnAttributes(DbAttributes):
 
 
 class Branch(Base):
-    id = Column(Integer, primary_key=True, default=1)
+    id = Column(Integer, primary_key=True)
     type = Column(String, default="MAIN")
     name = Column(String)
     create_ts = Column(DateTime, default=datetime.utcnow(), nullable=False)
     __mapper_args__ = {"polymorphic_identity": type}
 
 
-class Commit(Branch):
-    id = Column(Integer, default=1)
+class Commit(Base):
+    id = Column(Integer, primary_key=True)
     prev_commit_id = Column(Integer, default=None)
     dev_branch_id = Column(Integer, default=None)
-    branch_id = Column(Integer, ForeignKey("branch.id"), primary_key=True)
+    branch_id = Column(Integer, ForeignKey("branch.id"))
     attribute_id_in = Column(Integer)
     attribute_id_out = Column(Integer)
     create_ts = Column(DateTime, default=datetime.utcnow(), nullable=False)
