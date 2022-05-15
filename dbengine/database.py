@@ -1,14 +1,16 @@
 import re
 
-from sqlalchemy.ext.declarative import as_declarative, declared_attr
+from sqlalchemy.ext.declarative import as_declarative, declared_attr, declarative_base
 from sqlalchemy import create_engine, Integer, String, Column, DateTime, ForeignKey
 from datetime import datetime
-from dbengine.settings import Settings
+from settings import Settings
+from sqlalchemy.orm import sessionmaker
 
 settings = Settings()
 
 engine = create_engine(settings.DB_DSN)
 engine.connect()
+session = sessionmaker(bind=engine)
 
 
 @as_declarative()
@@ -68,5 +70,27 @@ class DbColumnAttributes(DbAttributes):
     __mapper_args__ = {"polymorphic_identity": "COLUMN"}
 
 
+class Branch(Base):
+    id = Column(Integer, primary_key=True, default=1)
+    type = Column(String, default="MAIN")
+    name = Column(String)
+    create_ts = Column(DateTime, default=datetime.utcnow(), nullable=False)
+    __mapper_args__ = {"polymorphic_identity": type}
+
+
+class Commit(Branch):
+    id = Column(Integer, default=1)
+    prev_commit_id = Column(Integer, default=None)
+    dev_branch_id = Column(Integer, default=None)
+    branch_id = Column(Integer, ForeignKey("branch.id"), primary_key=True)
+    attribute_id_in = Column(Integer)
+    attribute_id_out = Column(Integer)
+    create_ts = Column(DateTime, default=datetime.utcnow(), nullable=False)
+
+
 def create_tables():
     Base.metadata.create_all(engine)
+
+
+def delete_table(id: int, new_name: str):
+    pass
