@@ -56,7 +56,7 @@ class DbAttributes(Base):
 class DbTableAttributes(DbAttributes):
     id = Column(Integer, ForeignKey("db_attributes.id"), primary_key=True)
     table_id = Column(Integer, ForeignKey("db_table.id"))
-    path = Column(String)
+    name = Column(String)
 
     __mapper_args__ = {"polymorphic_identity": "TABLE"}
 
@@ -91,5 +91,44 @@ def create_tables():
     Base.metadata.create_all(engine)
 
 
-def delete_table(id: int, new_name: str):
+def delete_table(id: int):
+    commit = Commit()
+    commit.attribute_id_in = id
+    commit.attribute_id_out = None
+    session().add(commit)
+    session().commit()
+
+
+def alter_table(id_func: int, new_name: str):
+    session().query(DbColumnAttributes).filter(id == id_func).update({"name": new_name}, synchronize_session="fetch")
+    session().commit()
+
+
+def get_column(id: int):
+    s = session().query(DbColumnAttributes).filter(id == id)
+    return s.commit().all()
+
+
+def get_table(id: int):
+    s = session().query(DbTableAttributes).filter(id == id)
+    result = s.commit().all()
+    return {"name": result["name"], "columns": dict(**result, **get_column(id))}
+
+
+def alter_column(id: int, new_name: str, new_datatype: str):
+    s = session().query(DbColumnAttributes).filter(id == id).update({"name": new_name, "datatype": new_datatype})
+    s.commit()
+
+
+def get_column_id(table_id: int, name: str):
+    if table_id:
+        s = session().query(DbTableAttributes).filter(table_id == table_id)
+    elif name:
+        s = session().query(DbTableAttributes).filter(name == name)
+    return s.commit().all()["id"]
+
+
+def delete_column(id):
     pass
+
+
