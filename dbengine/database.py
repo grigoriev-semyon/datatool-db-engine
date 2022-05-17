@@ -8,9 +8,10 @@ from sqlalchemy.orm import sessionmaker
 
 settings = Settings()
 
-engine = create_engine(settings.DB_DSN)
+engine = create_engine(settings.DB_DSN, echo = True)
 engine.connect()
-session = sessionmaker(bind=engine)
+Session = sessionmaker(bind=engine)
+session = Session()
 
 
 @as_declarative()
@@ -129,19 +130,34 @@ def get_column_id(table_id: int, name: str):
 
 
 def create_table(name: str):
-    new = DbTableAttributes()
-    new.name = name
-    session().add(new)
-    session().commit()
-    return new.id
+    new_table = DbTable()
+    new_table.type = "TABLE"
+    session.add(new_table)
+    session.flush()
+    session.commit()
+    new_table_attribute = DbTableAttributes()
+    new_table_attribute.type = "TABLE"
+    new_table_attribute.id = new_table.id
+    new_table_attribute.name = name
+    session.add(new_table_attribute)
+    session.flush()
+    session.commit()
+    return new_table.id
 
-def create_column(table_id: int, name: str, datatype: str):
-    new = DbColumnAttributes()
-    new.name = name
-    new.datatype = datatype
-    new.id = table_id
-    session().add(new)
-    session().commit()
-    return new.id
 
-
+def create_column(name: str, datatype: str):
+    new_column = DbColumn()
+    new_column.type = "COLUMN"
+    new_column.table_id = new_column.id
+    session.add(new_column)
+    session.flush()
+    session.commit()
+    new_column_attribute = DbColumnAttributes()
+    new_column_attribute.type = "COLUMN"
+    new_column_attribute.id = new_column.id
+    new_column_attribute.datatype = datatype
+    new_column_attribute.name = name
+    session.add(new_column_attribute)
+    session.flush()
+    session.commit()
+    return new_column.id
