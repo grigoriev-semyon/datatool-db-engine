@@ -78,12 +78,12 @@ class Branch(Base):
 
 
 class Commit(Base):
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, ForeignKey("db_entity.id"), primary_key=True)
     prev_commit_id = Column(Integer, ForeignKey("commit.id"), default=None)
     dev_branch_id = Column(Integer, ForeignKey("branch.id"), default=None)
     branch_id = Column(Integer)
-    attribute_id_in = Column(Integer)
-    attribute_id_out = Column(Integer)
+    attribute_id_in = Column(Integer, ForeignKey("db_attributes.id"))
+    attribute_id_out = Column(Integer, ForeignKey("db_attributes.id"))
     create_ts = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 
