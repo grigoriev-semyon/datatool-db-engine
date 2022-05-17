@@ -128,7 +128,20 @@ def get_column_id(table_id: int, name: str):
     return s.commit().all()["id"]
 
 
-def delete_column(id):
-    pass
+def create_table(name: str):
+    new = DbTableAttributes()
+    new.name = name
+    session().add(new)
+    session().commit()
+    return new.id
+
+def create_column(table_id: int, name: str, datatype: str):
+    new = DbColumnAttributes()
+    new.name = name
+    new.datatype = datatype
+    new.id = table_id
+    session().add(new)
+    session().commit()
+    return new.id
 
 
