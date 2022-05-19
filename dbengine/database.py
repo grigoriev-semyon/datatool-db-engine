@@ -8,7 +8,7 @@ from sqlalchemy.orm import sessionmaker
 
 settings = Settings()
 
-engine = create_engine(settings.DB_DSN, echo = True)
+engine = create_engine(settings.DB_DSN, echo=True)
 engine.connect()
 Session = sessionmaker(bind=engine)
 session = Session()
@@ -162,3 +162,12 @@ def create_column(name: str, datatype: str):
     session.flush()
     session.commit()
     return new_column.id
+
+
+def create_new_brach(name: str):
+    new_brach = Branch()
+    new_brach.name = name
+    session.add(new_brach)
+    session.flush()
+    session.commit()
+    return new_brach.id
