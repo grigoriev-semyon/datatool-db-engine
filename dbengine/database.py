@@ -164,18 +164,19 @@ def create_column(name: str, datatype: str):
     return new_column.id
 
 
-def create_new_brach(name: str):
-    new_brach = Branch()
-    new_brach.name = name
-    session.add(new_brach)
+def create_new_branch(name: str):
+    new_branch = Branch()
+    new_branch.name = name
+    session.add(new_branch)
     session.flush()
     session.commit()
-    return new_brach.id
+    return new_branch.id
 
 
 def ok_branch_creator_column(branch: Branch, name: str):
     if branch.id != 1:
         new_commit = Commit()
+        new_commit.branch_id = branch.id
         new_commit.attribute_id_in = None
         new_attrubute_id = create_column(name=name, datatype="COLUMN")
         new_commit.attribute_id_out = new_attrubute_id
@@ -190,6 +191,7 @@ def ok_branch_creator_column(branch: Branch, name: str):
 def ok_brach_changer_column(branch: Branch, name: str, attribute_id: int):
     if branch.id != 1:
         new_commit = Commit()
+        new_commit.branch_id = branch.id
         new_commit.attribute_id_in = attribute_id
         new_column = create_column(name, "COLUMN")
         new_commit.attribute_id_out = new_column
@@ -204,6 +206,7 @@ def ok_brach_changer_column(branch: Branch, name: str, attribute_id: int):
 def ok_brach_deleter_column(brach: Branch, attribute_id: int):
     if brach.id != 1:
         new_commit = Commit()
+        new_commit.branch_id = branch.id
         new_commit.attribute_id_in = attribute_id
         new_commit.attribute_id_out = None
         session.add(new_commit)
