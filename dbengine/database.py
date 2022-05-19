@@ -171,3 +171,44 @@ def create_new_brach(name: str):
     session.flush()
     session.commit()
     return new_brach.id
+
+
+def ok_branch_creator_column(branch: Branch, name: str):
+    if branch.id != 1:
+        new_commit = Commit()
+        new_commit.attribute_id_in = None
+        new_attrubute_id = create_column(name=name, datatype="COLUMN")
+        new_commit.attribute_id_out = new_attrubute_id
+        session.add(new_commit)
+        session.flush()
+        session.commit()
+        return new_commit.id
+    else:
+        return "u cant do it from main branch"
+
+
+def ok_brach_changer_column(branch: Branch, name: str, attribute_id: int):
+    if branch.id != 1:
+        new_commit = Commit()
+        new_commit.attribute_id_in = attribute_id
+        new_column = create_column(name, "COLUMN")
+        new_commit.attribute_id_out = new_column
+        session.add(new_commit)
+        session.flush()
+        session.commit()
+        return new_column
+    else:
+        return "u cant do it from main branch"
+
+
+def ok_brach_deleter_column(brach: Branch, attribute_id: int):
+    if brach.id != 1:
+        new_commit = Commit()
+        new_commit.attribute_id_in = attribute_id
+        new_commit.attribute_id_out = None
+        session.add(new_commit)
+        session.flush()
+        session.commit()
+        return True
+    else:
+        return "u cant do it from main branch"
