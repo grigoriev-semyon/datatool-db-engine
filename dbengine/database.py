@@ -203,8 +203,8 @@ def ok_brach_changer_column(branch: Branch, name: str, attribute_id: int):
         return "u cant do it from main branch"
 
 
-def ok_brach_deleter_column(brach: Branch, attribute_id: int):
-    if brach.id != 1:
+def ok_brach_deleter_column(branch: Branch, attribute_id: int):
+    if branch.id != 1:
         new_commit = Commit()
         new_commit.branch_id = branch.id
         new_commit.attribute_id_in = attribute_id
