@@ -4,5 +4,6 @@ class BranchError(Exception):
 
 
 class ProhibitedActionInBranch(BranchError):
-    def __init__(self, message="This action is prohibited in this branch"):
+    def __init__(self, action: str, branch_name: str):
+        message = f"{action} is prohibited in {branch_name}"
         super().__init__(message)
