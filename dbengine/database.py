@@ -221,7 +221,7 @@ def ok_branch_changer_column(branch: Branch, name: str, attribute_id: int):
         session.commit()
         return new_column
     else:
-        raise ProhibitedActionInBranch("Column refactoring", branch.name)
+        raise ProhibitedActionInBranch("Column altering", branch.name)
 
 
 def ok_branch_deleter_column(branch: Branch, attribute_id: int):
