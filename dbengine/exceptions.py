@@ -1,5 +1,5 @@
 class BranchError(Exception):
-    def __init__(self, message="Branch error occured"):
+    def __init__(self, message="Branch error occurred"):
         super().__init__(message)
 
 
