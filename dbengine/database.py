@@ -5,7 +5,7 @@ from sqlalchemy import create_engine, Integer, String, Column, DateTime, Foreign
 from datetime import datetime
 from settings import Settings
 from sqlalchemy.orm import sessionmaker
-from exceptions import ProhibitedActionInBrach
+from exceptions import ProhibitedActionInBranch
 
 settings = Settings()
 
@@ -206,7 +206,7 @@ def ok_branch_creator_column(branch: Branch, name: str):
         session.commit()
         return new_commit.id
     else:
-        raise ProhibitedActionInBrach
+        raise ProhibitedActionInBranch
 
 
 def ok_branch_changer_column(branch: Branch, name: str, attribute_id: int):
@@ -221,7 +221,7 @@ def ok_branch_changer_column(branch: Branch, name: str, attribute_id: int):
         session.commit()
         return new_column
     else:
-        raise ProhibitedActionInBrach
+        raise ProhibitedActionInBranch
 
 
 def ok_branch_deleter_column(branch: Branch, attribute_id: int):
@@ -235,7 +235,7 @@ def ok_branch_deleter_column(branch: Branch, attribute_id: int):
         session.commit()
         return True
     else:
-        raise ProhibitedActionInBrach
+        raise ProhibitedActionInBranch
 
 
 def get_branch(id: int):
@@ -243,4 +243,4 @@ def get_branch(id: int):
 
 
 def get_branch_id(name: str):
-    return session.query(Branch).filter(Branch.name == name).one()
+    return session.query(Branch).filter(Branch.name == name).one().id

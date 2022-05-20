@@ -3,6 +3,6 @@ class BranchError(Exception):
         super().__init__(message)
 
 
-class ProhibitedActionInBrach(BranchError):
+class ProhibitedActionInBranch(BranchError):
     def __init__(self, message="This action is prohibited in this branch"):
         super().__init__(message)
