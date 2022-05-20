@@ -244,3 +244,15 @@ def get_branch(id: int):
 
 def get_branch_id(name: str):
     return session.query(Branch).filter(Branch.name == name).one().id
+
+
+def ok_branch_creator_table():
+    pass
+
+
+def ok_branch_alter_table():
+    pass
+
+
+def ok_branch_delete_table():
+    pass
