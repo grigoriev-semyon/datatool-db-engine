@@ -5,6 +5,7 @@ from sqlalchemy import create_engine, Integer, String, Column, DateTime, Foreign
 from datetime import datetime
 from settings import Settings
 from sqlalchemy.orm import sessionmaker
+from exceptions import ProhibitedActionInBrach
 
 settings = Settings()
 
@@ -113,9 +114,8 @@ def get_column(id: int):
 
 
 def get_table(id: int):
-    s = session.query(DbTableAttributes).filter(DbTableAttributes.id == id)
-    result = s.commit().all()
-    return {"name": result["name"], "columns": dict(**result, **get_column(id))}
+    s = session.query(DbTableAttributes).filter(DbTableAttributes.id == id).one()
+    return {"name": s.name, "columns": dict(**s, **get_column(id))}
 
 
 def alter_column(id: int, new_name: str, new_datatype: str):
@@ -206,7 +206,7 @@ def ok_branch_creator_column(branch: Branch, name: str):
         session.commit()
         return new_commit.id
     else:
-        return "u cant do it from main branch"
+        raise ProhibitedActionInBrach
 
 
 def ok_branch_changer_column(branch: Branch, name: str, attribute_id: int):
@@ -221,7 +221,7 @@ def ok_branch_changer_column(branch: Branch, name: str, attribute_id: int):
         session.commit()
         return new_column
     else:
-        return "u cant do it from main branch"
+        raise ProhibitedActionInBrach
 
 
 def ok_branch_deleter_column(branch: Branch, attribute_id: int):
@@ -235,14 +235,12 @@ def ok_branch_deleter_column(branch: Branch, attribute_id: int):
         session.commit()
         return True
     else:
-        return "u cant do it from main branch"
+        raise ProhibitedActionInBrach
 
 
 def get_branch(id: int):
-    s = session.query(Branch).filter(Branch.id == id).one()
-    return s
+    return session.query(Branch).filter(Branch.id == id).one()
 
 
 def get_branch_id(name: str):
-    s = session.query(Branch).filter(Branch.name == name).one()
-    return s
+    return session.query(Branch).filter(Branch.name == name).one()
