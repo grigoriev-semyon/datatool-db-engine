@@ -127,7 +127,7 @@ def get_column_id(table_id: int, name: str):
         s = session.query(DbTableAttributes).filter(table_id == table_id)
     elif name:
         s = session.query(DbTableAttributes).filter(name == name)
-    return s.commit().all()["id"]
+    return s.commit().all().id
 
 
 def create_table(name: str):
@@ -188,7 +188,7 @@ def ok_branch_creator_column(branch: Branch, name: str):
         return "u cant do it from main branch"
 
 
-def ok_brach_changer_column(branch: Branch, name: str, attribute_id: int):
+def ok_branch_changer_column(branch: Branch, name: str, attribute_id: int):
     if branch.id != 1:
         new_commit = Commit()
         new_commit.branch_id = branch.id
@@ -203,7 +203,7 @@ def ok_brach_changer_column(branch: Branch, name: str, attribute_id: int):
         return "u cant do it from main branch"
 
 
-def ok_brach_deleter_column(branch: Branch, attribute_id: int):
+def ok_branch_deleter_column(branch: Branch, attribute_id: int):
     if branch.id != 1:
         new_commit = Commit()
         new_commit.branch_id = branch.id
@@ -215,3 +215,15 @@ def ok_brach_deleter_column(branch: Branch, attribute_id: int):
         return True
     else:
         return "u cant do it from main branch"
+
+
+def get_branch(id: int):
+    s = session.query(Branch).filter(id == id)
+    return s.commit().all()
+
+
+def get_branch_id(name: str):
+    s = session.query(Branch).filter(name=name)
+    return s.commit().all().id
+
+
