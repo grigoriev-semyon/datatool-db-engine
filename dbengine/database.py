@@ -79,7 +79,7 @@ class Branch(Base):
 
 
 class Commit(Base):
-    id = Column(Integer, ForeignKey("db_entity.id"), primary_key=True)
+    id = Column(Integer, primary_key=True)
     prev_commit_id = Column(Integer, ForeignKey("commit.id"), default=None)
     dev_branch_id = Column(Integer, ForeignKey("branch.id"), default=None)
     branch_id = Column(Integer)
@@ -165,11 +165,30 @@ def create_column(name: str, datatype: str):
 
 
 def create_new_branch(name: str):
-    new_branch = Branch()
-    new_branch.name = name
-    session.add(new_branch)
-    session.flush()
-    session.commit()
+    s = session.query(Branch).all()
+    if not s:
+        new_branch = Branch()
+        new_branch.name = name
+        session.add(new_branch)
+        session.flush()
+        session.commit()
+        new_commit = Commit()
+        new_commit.branch_id = new_branch.id
+        session.add(new_commit)
+        session.flush()
+        session.commit()
+    else:
+        new_branch = Branch()
+        new_branch.name = name
+        new_branch.type = "IN_WORK"
+        session.add(new_branch)
+        session.flush()
+        session.commit()
+        new_commit = Commit()
+        new_commit.branch_id = new_branch.id
+        session.add(new_commit)
+        session.flush()
+        session.commit()
     return new_branch.id
 
 
@@ -218,12 +237,10 @@ def ok_branch_deleter_column(branch: Branch, attribute_id: int):
 
 
 def get_branch(id: int):
-    s = session.query(Branch).filter(id == id)
-    return s.commit().all()
+    s = session.query(Branch).filter(Branch.id == id).one()
+    return s
 
 
 def get_branch_id(name: str):
-    s = session.query(Branch).filter(name=name)
-    return s.commit().all().id
-
-
+    s = session.query(Branch).filter(Branch.name == name).one()
+    return s
