@@ -246,13 +246,32 @@ def get_branch_id(name: str):
     return session.query(Branch).filter(Branch.name == name).one().id
 
 
-def ok_branch_creator_table():
-    pass
+def ok_branch_creator_table(branch: Branch, name: str):
+    if branch.id != 1:
+        new_commit = Commit()
+        new_commit.branch_id = branch.id
+        new_commit.attribute_id_in = None
+        new_table_id = create_table(name)
+        new_commit.attribute_id_out = new_table_id
+        session.add(new_commit)
+        session.flush()
+        session.commit()
+        return new_commit.id
+    else:
+        raise ProhibitedActionInBranch("Table creating", branch.name)
 
 
-def ok_branch_alter_table():
-    pass
+def ok_branch_alter_table(brach: Branch, name: str, attribute_id: int):
+    if brach.id != 1:
+        new_commit = Commit()
+        new_commit.branch_id = brach.id
+        new_commit.attribute_id_in = attribute_id
+        new_table = create_table(name)
+        new_commit.attribute_id_out = new_table
+        session.add(new_commit)
+        session.flush()
+        session.commit()
+        return new_table
+    else:
+        raise ProhibitedActionInBranch("Table altering", brach.name)
 
-
-def ok_branch_delete_table():
-    pass
