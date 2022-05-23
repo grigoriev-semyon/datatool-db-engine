@@ -93,13 +93,19 @@ def create_tables():
     Base.metadata.create_all(engine)
 
 
-def delete_table(id: int):
-    commit = Commit()
-    commit.attribute_id_in = id
-    commit.attribute_id_out = None
-    session.add(commit)
-    session.flush()
-    session.commit()
+def delete_table(branch: Branch, attribute_id: int):
+    if branch.id != 1:
+        s = session.query(Commit).filter(Commit.branch_id == attribute_id).order_by(Commit.id.desc()).first()
+        new_commit = Commit()
+        new_commit.attribute_id_in = attribute_id
+        if s:
+            new_commit.prev_commit_id = s
+        new_commit.attribute_id_out = None
+        session.add(new_commit)
+        session.flush()
+        session.commit()
+    else:
+        raise ProhibitedActionInBranch("Deleting table", branch.name)
 
 
 def alter_table(id: int, new_name: str):
@@ -196,8 +202,11 @@ def create_new_branch(name: str):
 
 def ok_branch_creator_column(branch: Branch, name: str):
     if branch.id != 1:
+        s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()
         new_commit = Commit()
         new_commit.branch_id = branch.id
+        if s:
+            new_commit.prev_commit_id = s
         new_commit.attribute_id_in = None
         new_attrubute_id = create_column(name=name, datatype="COLUMN")
         new_commit.attribute_id_out = new_attrubute_id
@@ -211,8 +220,11 @@ def ok_branch_creator_column(branch: Branch, name: str):
 
 def ok_branch_changer_column(branch: Branch, name: str, attribute_id: int):
     if branch.id != 1:
+        s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()
         new_commit = Commit()
         new_commit.branch_id = branch.id
+        if s:
+            new_commit.prev_commit_id = s
         new_commit.attribute_id_in = attribute_id
         new_column = create_column(name, "COLUMN")
         new_commit.attribute_id_out = new_column
@@ -226,8 +238,11 @@ def ok_branch_changer_column(branch: Branch, name: str, attribute_id: int):
 
 def ok_branch_deleter_column(branch: Branch, attribute_id: int):
     if branch.id != 1:
+        s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()
         new_commit = Commit()
         new_commit.branch_id = branch.id
+        if s:
+            new_commit.prev_commit_id = s
         new_commit.attribute_id_in = attribute_id
         new_commit.attribute_id_out = None
         session.add(new_commit)
@@ -248,8 +263,11 @@ def get_branch_id(name: str):
 
 def ok_branch_creator_table(branch: Branch, name: str):
     if branch.id != 1:
+        s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()
         new_commit = Commit()
         new_commit.branch_id = branch.id
+        if s:
+            new_commit.prev_commit_id = s
         new_commit.attribute_id_in = None
         new_table_id = create_table(name)
         new_commit.attribute_id_out = new_table_id
@@ -263,8 +281,11 @@ def ok_branch_creator_table(branch: Branch, name: str):
 
 def ok_branch_alter_table(branch: Branch, name: str, attribute_id: int):
     if branch.id != 1:
+        s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()
         new_commit = Commit()
         new_commit.branch_id = branch.id
+        if s:
+            new_commit.prev_commit_id = s
         new_commit.attribute_id_in = attribute_id
         new_table = create_table(name)
         new_commit.attribute_id_out = new_table
@@ -275,3 +296,8 @@ def ok_branch_alter_table(branch: Branch, name: str, attribute_id: int):
     else:
         raise ProhibitedActionInBranch("Table altering", branch.name)
 
+
+def merge(branch: Branch, new_type: str):
+    s = session.query(Branch).filter(Branch.id == branch.id).update(
+        {"type": new_type})
+    s.commit()
