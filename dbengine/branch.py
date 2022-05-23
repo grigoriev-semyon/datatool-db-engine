@@ -8,12 +8,7 @@ from .models import Branch, BranchTypes, Commit
 from .settings import Settings
 from exceptions import ProhibitedActionInBranch
 
-settings = Settings()
-
-engine = create_engine(settings.DB_DSN, echo=True)
-engine.connect()
-Session = sessionmaker(bind=engine)
-session = Session()
+from models import session
 
 logger = logging.getLogger(__name__)
 
