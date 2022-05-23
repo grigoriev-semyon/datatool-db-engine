@@ -261,10 +261,10 @@ def ok_branch_creator_table(branch: Branch, name: str):
         raise ProhibitedActionInBranch("Table creating", branch.name)
 
 
-def ok_branch_alter_table(brach: Branch, name: str, attribute_id: int):
-    if brach.id != 1:
+def ok_branch_alter_table(branch: Branch, name: str, attribute_id: int):
+    if branch.id != 1:
         new_commit = Commit()
-        new_commit.branch_id = brach.id
+        new_commit.branch_id = branch.id
         new_commit.attribute_id_in = attribute_id
         new_table = create_table(name)
         new_commit.attribute_id_out = new_table
@@ -273,5 +273,5 @@ def ok_branch_alter_table(brach: Branch, name: str, attribute_id: int):
         session.commit()
         return new_table
     else:
-        raise ProhibitedActionInBranch("Table altering", brach.name)
+        raise ProhibitedActionInBranch("Table altering", branch.name)
 
