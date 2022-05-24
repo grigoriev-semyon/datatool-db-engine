@@ -32,7 +32,7 @@ def init_main() -> Branch:
         session.flush()
         session.commit()
     else:
-        raise Exception
+        raise BranchError("Main branch already exists")
     logger.debug("init_main")
     return new_branch
 
@@ -88,7 +88,7 @@ def unrequest_merge_branch(branch: Branch) -> Branch:
         session.flush()
         session.commit()
     else:
-        raise IncorrectBranchType("Unreguest", branch.name)
+        raise IncorrectBranchType("Unreguest merge", branch.name)
     logger.debug("unrequest_merge_branch")
     return branch
 
@@ -104,7 +104,7 @@ def ok_branch(branch: Branch) -> Branch:
         session.flush()
         session.commit()
     else:
-        raise IncorrectBranchType("Confirm", branch.name)
+        raise IncorrectBranchType("Confirm merge", branch.name)
     logger.debug("ok_branch")
     return branch
 
@@ -115,15 +115,3 @@ def get_branch(id: int) -> Branch:
     return session.query(Branch).filter(Branch.id == id).one()
 
 
-def create_main_branch():
-    new_branch = Branch()
-    new_branch.name = 'main'
-    new_branch.type = BranchTypes.MAIN
-    session.add(new_branch)
-    session.flush()
-    session.commit()
-    new_commit = Commit()
-    new_commit.branch_id = new_branch.id
-    session.add(new_commit)
-    session.flush()
-    session.commit()
