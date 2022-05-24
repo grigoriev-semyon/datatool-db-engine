@@ -15,14 +15,13 @@ from .column import *
 
 
 # update_table(get_branch(2), get_table(get_branch(2), 1)[0], "test_update")
-delete_table(get_branch(2), get_table(get_branch(2), 1)[0])
+# delete_table(get_branch(2), get_table(get_branch(2), 1)[0])
 
 # create_branch('test2')
-# create_table(get_branch(3), 'testtable3')
-# create_table(get_branch(3), 'testtable4')
-# create_column(get_branch(3), get_table(get_branch(3), 5)[0], name="testcolumn", datatype="testtype")
-# update_column(get_branch(3), get_table(get_branch(3), 6)[0],
-#               get_column(get_branch(3), get_table(get_branch(3), 5)[0], 7)[0], name="testupdate",
+# create_table(get_branch(3), 'testtable2')
+# create_column(get_branch(3), get_table(get_branch(3), 3)[0], name="testcolumn", datatype="testtype")
+# update_column(get_branch(3), get_table(get_branch(3), 3)[0],
+#               get_column(get_branch(3), get_table(get_branch(3), 3)[0], 4)[0], name="testupdate",
 #               datatype="testupdatetype")
 # create_column(get_branch(3), get_table(get_branch(3), 5)[0], name="here")
 # create_table(get_branch(4), "thistable")
@@ -33,3 +32,4 @@ delete_table(get_branch(2), get_table(get_branch(2), 1)[0])
 
 # update_column(get_branch(5), get_table(get_branch(5), 10)[0],
 #              get_column(get_branch(5), get_table(get_branch(5), 10)[0], 11)[0], name="aaaaaa", datatype="((")
+delete_column(get_branch(3), get_column(get_branch(3), get_table(get_branch(3), 3)[0], 5)[0])

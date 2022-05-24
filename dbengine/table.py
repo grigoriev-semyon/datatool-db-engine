@@ -97,6 +97,7 @@ def delete_table(branch: Branch, table: DbTable) -> Commit:
         if s:
             new_commit.prev_commit_id = s.prev_commit_id + 1
         new_commit.attribute_id_out = None
+        new_commit.branch_id = branch.id
         session.add(new_commit)
         session.flush()
         session.commit()
