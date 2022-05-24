@@ -19,7 +19,7 @@ def create_table(
         new_commit = Commit()
         new_commit.branch_id = branch.id
         if s:
-            new_commit.prev_commit_id = s.previous_commit_id + 1
+            new_commit.prev_commit_id = s.prev_commit_id + 1
         new_commit.attribute_id_in = None
         new_table = DbTable()
         new_table.type = AttributeTypes.TABLE
@@ -64,7 +64,7 @@ def update_table(
         new_commit = Commit()
         new_commit.branch_id = branch.id
         if s:
-            new_commit.prev_commit_id = s.previous_commit_id + 1
+            new_commit.prev_commit_id = s.prev_commit_id + 1
         new_commit.attribute_id_in = table.id
         new_table = DbTable()
         new_table.type = AttributeTypes.TABLE
@@ -95,7 +95,7 @@ def delete_table(branch: Branch, table: DbTable) -> Commit:
         new_commit = Commit()
         new_commit.attribute_id_in = table.id
         if s:
-            new_commit.prev_commit_id = s.previous_commit_id + 1
+            new_commit.prev_commit_id = s.prev_commit_id + 1
         new_commit.attribute_id_out = None
         session.add(new_commit)
         session.flush()
