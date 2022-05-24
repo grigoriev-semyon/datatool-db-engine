@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 
 from .models import Branch, BranchTypes, Commit
 from .settings import Settings
-from .exceptions import ProhibitedActionInBranch
+from .exceptions import ProhibitedActionInBranch, IncorrectBranchType, BranchError
 
 from .models import session
 
@@ -56,7 +56,7 @@ def create_branch(name) -> Branch:
         session.flush()
         session.commit()
     else:
-        raise Exception
+        raise BranchError("Main branch does not exists")
     logger.debug("create_branch")
     return new_branch
 
@@ -72,7 +72,7 @@ def request_merge_branch(branch: Branch) -> Branch:
         session.flush()
         session.commit()
     else:
-        raise Exception
+        raise IncorrectBranchType("merge", branch.name)
     logger.debug("request_merge_branch")
     return branch
 
@@ -87,6 +87,8 @@ def unrequest_merge_branch(branch: Branch) -> Branch:
         session.query(Branch).filter(Branch.id == branch.id).update({"type": BranchTypes.WIP})
         session.flush()
         session.commit()
+    else:
+        raise IncorrectBranchType("Unreguest", branch.name)
     logger.debug("unrequest_merge_branch")
     return branch
 
@@ -101,6 +103,8 @@ def ok_branch(branch: Branch) -> Branch:
         session.query(Branch).filter(Branch.id == branch.id).update({"type": BranchTypes.MERGED})
         session.flush()
         session.commit()
+    else:
+        raise IncorrectBranchType("Confirm", branch.name)
     logger.debug("ok_branch")
     return branch
 
