@@ -10,7 +10,6 @@ from sqlalchemy.orm import sessionmaker
 
 from .settings import Settings
 
-
 settings = Settings()
 
 engine = create_engine(settings.DB_DSN, echo=True)
@@ -81,6 +80,11 @@ class BranchTypes(str, Enum):
     WIP = "WORK IN PROGRESS"
     MR = "MERGE REQUEST"
     MERGED = "MERGED"
+
+
+class AttributeTypes(str, Enum):
+    TABLE = "TABLE"
+    COLUMN = "COLUMN"
 
 
 class Branch(Base):

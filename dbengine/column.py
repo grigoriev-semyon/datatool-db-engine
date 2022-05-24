@@ -2,11 +2,11 @@ import logging
 from typing import Optional, Tuple, Union
 
 from .exceptions import ProhibitedActionInBranch
-from .models import Branch, Commit, DbColumn, DbColumnAttributes, DbTable, BranchTypes
+from .models import Branch, Commit, DbColumn, DbColumnAttributes, DbTable, BranchTypes, AttributeTypes
 
 logger = logging.getLogger(__name__)
 
-from models import session
+from .models import session
 
 
 def create_column(
@@ -22,14 +22,14 @@ def create_column(
             new_commit.prev_commit_id = s.id
         new_commit.attribute_id_in = None
         new_column = DbColumn()
-        new_column.type = "COLUMN"
+        new_column.type = AttributeTypes.COLUMN
         new_column.table_id = table.id
         session.add(new_column)
         session.flush()
         session.commit()
         new_column_attribute = DbColumnAttributes()
-        new_column_attribute.type = "COLUMN"
-        new_column_attribute.id = new_column.id
+        new_column_attribute.type = AttributeTypes.COLUMN
+        new_column_attribute.column_id = new_column.id
         new_column_attribute.datatype = datatype
         new_column_attribute.name = name
         session.add(new_column_attribute)
@@ -45,12 +45,14 @@ def create_column(
 
 
 def get_column(
-        branch: Branch, table: DbTable, id_or_name: Union[str, int]
+        branch: Branch, table: DbTable, id: int
 ) -> Tuple[DbColumn, DbColumnAttributes]:
     """Get last version of column in table in branch"""
     logging.debug('get_column')
-    s = session.query(Commit).filter(Commit.branch_id == branch.id).order(Commit.id.desc()).first()
-    return session.query([DbColumn, DbColumnAttributes]).filter(DbColumn.id == s.attribute_id_out)
+    s = session.query(Commit).filter(Commit.branch_id == branch.id and Commit.attribute_id_out == id).order(
+        Commit.id.desc()).first()
+    return session.query(DbColumn).filter(DbColumn.id == s.attribute_id_out).one(), session.query(DbColumnAttributes).filter(
+        DbColumnAttributes.column_id == s.attribute_id_out).one()
 
 
 def update_column(
@@ -74,14 +76,14 @@ def update_column(
             new_commit.prev_commit_id = s.id
         new_commit.attribute_id_in = column.id
         new_column = DbColumn()
-        new_column.type = "COLUMN"
+        new_column.type = AttributeTypes.COLUMN
         new_column.table_id = table.id
         session.add(new_column)
         session.flush()
         session.commit()
         new_column_attribute = DbColumnAttributes()
-        new_column_attribute.type = "COLUMN"
-        new_column_attribute.id = new_column.id
+        new_column_attribute.type = AttributeTypes.COLUMN
+        new_column_attribute.column_id = new_column.id
         new_column_attribute.datatype = datatype
         new_column_attribute.name = name
         session.add(new_column_attribute)

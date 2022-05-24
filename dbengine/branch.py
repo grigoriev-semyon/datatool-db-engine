@@ -6,9 +6,9 @@ from sqlalchemy.orm import sessionmaker
 
 from .models import Branch, BranchTypes, Commit
 from .settings import Settings
-from exceptions import ProhibitedActionInBranch
+from .exceptions import ProhibitedActionInBranch
 
-from models import session
+from .models import session
 
 logger = logging.getLogger(__name__)
 
@@ -110,3 +110,16 @@ def get_branch(id: int) -> Branch:
     logger.debug("get_branch")
     return session.query(Branch).filter(Branch.id == id).one()
 
+
+def create_main_branch():
+    new_branch = Branch()
+    new_branch.name = 'main'
+    new_branch.type = BranchTypes.MAIN
+    session.add(new_branch)
+    session.flush()
+    session.commit()
+    new_commit = Commit()
+    new_commit.branch_id = new_branch.id
+    session.add(new_commit)
+    session.flush()
+    session.commit()
