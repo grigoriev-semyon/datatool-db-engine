@@ -1,6 +1,8 @@
 import logging
 from typing import List, Optional, Tuple, Union
 
+from sqlalchemy import and_
+
 from .exceptions import ProhibitedActionInBranch
 from .models import Branch, Commit, DbColumn, DbTable, DbTableAttributes, BranchTypes, session, AttributeTypes
 
@@ -46,7 +48,7 @@ def get_table(
 ) -> Tuple[DbTable, DbTableAttributes]:
     """Return table and last attributes in branch by id or name"""
     logging.debug("get_table")
-    s = session.query(Commit).filter(Commit.branch_id == branch.id and Commit.attribute_id_out == id).order_by(
+    s = session.query(Commit).filter(and_(Commit.branch_id == branch.id, Commit.attribute_id_out == id)).order_by(
         Commit.id.desc()).first()
     return session.query(DbTable).filter(DbTable.id == s.attribute_id_out).one(), session.query(
         DbTableAttributes).filter(

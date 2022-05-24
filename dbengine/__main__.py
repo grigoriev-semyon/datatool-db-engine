@@ -21,7 +21,15 @@ from .column import *
 # create_table(get_branch(3), 'testtable3')
 # create_table(get_branch(3), 'testtable4')
 # create_column(get_branch(3), get_table(get_branch(3), 5)[0], name="testcolumn", datatype="testtype")
-update_column(get_branch(3), get_table(get_branch(3), 6)[0],
-              get_column(get_branch(3), get_table(get_branch(3), 5)[0], 7)[0], name="testupdate",
-              datatype="testupdatetype")
+# update_column(get_branch(3), get_table(get_branch(3), 6)[0],
+#               get_column(get_branch(3), get_table(get_branch(3), 5)[0], 7)[0], name="testupdate",
+#               datatype="testupdatetype")
 # create_column(get_branch(3), get_table(get_branch(3), 5)[0], name="here")
+# create_table(get_branch(4), "thistable")
+# create_column(get_branch(4), get_table(get_branch(4), 8)[0], name="thiscol", datatype="thistype")
+# update_column(get_branch(4), get_table(get_branch(4), 8)[0],
+#               get_column(get_branch(4), get_table(get_branch(4), 8)[0], 9)[0], name="thisupdate!",
+#               datatype="thistypeupdate")
+
+update_column(get_branch(5), get_table(get_branch(5), 10)[0],
+              get_column(get_branch(5), get_table(get_branch(5), 10)[0], 11)[0], name="aaaaaa", datatype="((")
