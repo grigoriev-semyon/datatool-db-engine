@@ -22,7 +22,7 @@ def create_column(
     new_commit = Commit()
     new_commit.branch_id = branch.id
     if s:
-        new_commit.prev_commit_id = s.prev_commit_id + 1
+        new_commit.prev_commit_id = s.id
     new_commit.attribute_id_in = None
     new_column = DbColumn()
     new_column.type = AttributeTypes.COLUMN
@@ -73,7 +73,7 @@ def update_column(
     new_commit = Commit()
     new_commit.branch_id = branch.id
     if s:
-        new_commit.prev_commit_id = s.prev_commit_id + 1
+        new_commit.prev_commit_id = s.id
     new_commit.attribute_id_in = column.id
     new_column = DbColumn()
     new_column.type = AttributeTypes.COLUMN
@@ -108,7 +108,7 @@ def delete_column(branch: Branch, column: DbColumn):
     new_commit = Commit()
     new_commit.branch_id = branch.id
     if s:
-        new_commit.prev_commit_id = s.prev_commit_id + 1
+        new_commit.prev_commit_id = s.id
     new_commit.attribute_id_in = column.table_id
     new_commit.attribute_id_out = None
     session.add(new_commit)
