@@ -26,7 +26,6 @@ def init_main() -> Branch:
     new_branch.type = BranchTypes.MAIN
     session.add(new_branch)
     session.flush()
-    session.commit()
     new_commit = Commit()
     new_commit.branch_id = new_branch.id
     session.add(new_commit)
@@ -49,7 +48,6 @@ def create_branch(name) -> Branch:
     new_branch.type = BranchTypes.WIP
     session.add(new_branch)
     session.flush()
-    session.commit()
     new_commit = Commit()
     new_commit.branch_id = new_branch.id
     session.add(new_commit)

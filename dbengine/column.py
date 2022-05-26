@@ -29,7 +29,6 @@ def create_column(
     new_column.table_id = table.id
     session.add(new_column)
     session.flush()
-    session.commit()
     new_column_attribute = DbColumnAttributes()
     new_column_attribute.type = AttributeTypes.COLUMN
     new_column_attribute.column_id = new_column.id
@@ -37,7 +36,6 @@ def create_column(
     new_column_attribute.name = name
     session.add(new_column_attribute)
     session.flush()
-    session.commit()
     new_commit.attribute_id_out = new_column.id
     session.add(new_commit)
     session.flush()
@@ -82,7 +80,6 @@ def update_column(
     new_column.table_id = table.id
     session.add(new_column)
     session.flush()
-    session.commit()
     new_column_attribute = DbColumnAttributes()
     new_column_attribute.type = AttributeTypes.COLUMN
     new_column_attribute.column_id = new_column.id
@@ -90,7 +87,6 @@ def update_column(
     new_column_attribute.name = name
     session.add(new_column_attribute)
     session.flush()
-    session.commit()
     new_commit.attribute_id_out = new_column.id
     session.add(new_commit)
     session.flush()

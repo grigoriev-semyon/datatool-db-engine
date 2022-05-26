@@ -26,14 +26,12 @@ def create_table(
     new_table.type = AttributeTypes.TABLE
     session.add(new_table)
     session.flush()
-    session.commit()
     new_table_attribute = DbTableAttributes()
     new_table_attribute.type = AttributeTypes.TABLE
     new_table_attribute.table_id = new_table.id
     new_table_attribute.name = name
     session.add(new_table_attribute)
     session.flush()
-    session.commit()
     new_commit.attribute_id_out = new_table.id
     session.add(new_commit)
     session.flush()
@@ -70,14 +68,12 @@ def update_table(
     new_table.type = AttributeTypes.TABLE
     session.add(new_table)
     session.flush()
-    session.commit()
     new_table_attribute = DbTableAttributes()
     new_table_attribute.type = AttributeTypes.TABLE
     new_table_attribute.table_id = new_table.id
     new_table_attribute.name = name
     session.add(new_table_attribute)
     session.flush()
-    session.commit()
     new_commit.attribute_id_out = new_table.id
     session.add(new_commit)
     session.flush()
