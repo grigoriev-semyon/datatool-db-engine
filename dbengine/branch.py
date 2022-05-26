@@ -97,13 +97,18 @@ def ok_branch(branch: Branch) -> Branch:
     branch.type = BranchTypes.MERGED
     session.query(Branch).filter(Branch.id == branch.id).update({"type": BranchTypes.MERGED})
     session.flush()
-    s = session.query(Commit).filter(Commit.branch_id == branch.id).all()
+    s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id).all()
     for row in s:
         new_commit = Commit()
         new_commit.dev_branch_id = branch.id
         new_commit.attribute_id_in = row.attribute_id_in
         new_commit.attribute_id_out = row.attribute_id_out
         new_commit.branch_id = 1
+        if s.prev_commit_id == 1:
+            new_commit.prev_commit_id = 1
+        else:
+            prev_commit = session.query(Commit).filter(Commit.dev_branch_id == branch.id).order_by(Commit.id).first()
+            new_commit.prev_commit_id = prev_commit.id
         session.add(new_commit)
         session.flush()
     session.commit()
