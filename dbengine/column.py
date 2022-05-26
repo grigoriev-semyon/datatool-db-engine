@@ -102,7 +102,7 @@ def delete_column(branch: Branch, column: DbColumn):
     """
     logging.debug('delete_column')
     if branch.type == BranchTypes.MAIN:
-        raise ProhibitedActionInBranch("Column deliting", branch.name)
+        raise ProhibitedActionInBranch("Column deleting", branch.name)
     s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(
         Commit.id.desc()).first()
     new_commit = Commit()

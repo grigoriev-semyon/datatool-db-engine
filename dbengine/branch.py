@@ -63,9 +63,9 @@ def request_merge_branch(branch: Branch) -> Branch:
     Только если сейчас WIP
     """
     if branch.type != BranchTypes.WIP:
-        raise IncorrectBranchType("merge", branch.name)
+        raise IncorrectBranchType("request merge", "main")
     branch.type = BranchTypes.MR
-    session.query(Branch).filter(Branch.id == branch.id).update({"type": BranchTypes.MERGED})
+    session.query(Branch).filter(Branch.id == branch.id).update({"type": BranchTypes.MR})
     session.flush()
     session.commit()
     logger.debug("request_merge_branch")
@@ -104,7 +104,7 @@ def ok_branch(branch: Branch) -> Branch:
         new_commit.attribute_id_in = row.attribute_id_in
         new_commit.attribute_id_out = row.attribute_id_out
         new_commit.branch_id = 1
-        if s.prev_commit_id == 1:
+        if row.prev_commit_id == 1:
             new_commit.prev_commit_id = 1
         else:
             prev_commit = session.query(Commit).filter(Commit.dev_branch_id == branch.id).order_by(Commit.id).first()
