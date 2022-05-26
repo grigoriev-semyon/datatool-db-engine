@@ -97,6 +97,15 @@ def ok_branch(branch: Branch) -> Branch:
     branch.type = BranchTypes.MERGED
     session.query(Branch).filter(Branch.id == branch.id).update({"type": BranchTypes.MERGED})
     session.flush()
+    s = session.query(Commit).filter(Commit.branch_id == branch.id).all()
+    for row in s:
+        new_commit = Commit()
+        new_commit.dev_branch_id = branch.id
+        new_commit.attribute_id_in = row.attribute_id_in
+        new_commit.attribute_id_out = row.attribute_id_out
+        new_commit.branch_id = 1
+        session.add(new_commit)
+        session.flush()
     session.commit()
     logger.debug("ok_branch")
     return branch
