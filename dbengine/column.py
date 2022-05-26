@@ -1,6 +1,7 @@
 import logging
 from typing import Optional, Tuple, Union
 
+import sqlalchemy.exc
 from sqlalchemy import and_
 
 from .exceptions import ProhibitedActionInBranch
@@ -48,10 +49,13 @@ def get_column(
 ) -> Tuple[DbColumn, DbColumnAttributes]:
     """Get last version of column in table in branch"""
     logging.debug('get_column')
-    s = session.query(Commit).filter(and_(Commit.branch_id == branch.id, Commit.attribute_id_out == id)).order_by(
-        Commit.id.desc()).first()
-    return session.query(DbColumn).filter(DbColumn.id == s.attribute_id_out).one(), session.query(DbColumnAttributes).filter(
-        DbColumnAttributes.column_id == s.attribute_id_out).one()
+    try:
+        s = session.query(Commit).filter(and_(Commit.branch_id == branch.id, Commit.attribute_id_out == id)).order_by(
+            Commit.id.desc()).first()
+        return session.query(DbColumn).filter(DbColumn.id == s.attribute_id_out).one(), session.query(DbColumnAttributes).filter(
+            DbColumnAttributes.column_id == s.attribute_id_out).one()
+    except sqlalchemy.exc.NoResultFound:
+        logging.error(sqlalchemy.exc.NoResultFound, exc_info=True)
 
 
 def update_column(

@@ -1,6 +1,7 @@
 import logging
 from typing import Union
 
+import sqlalchemy.exc
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -119,4 +120,7 @@ def ok_branch(branch: Branch) -> Branch:
 def get_branch(id: int) -> Branch:
     """Return branch by id or name"""
     logger.debug("get_branch")
-    return session.query(Branch).filter(Branch.id == id).one()
+    try:
+        return session.query(Branch).filter(Branch.id == id).one()
+    except sqlalchemy.exc.NoResultFound:
+        logging.error(sqlalchemy.exc.NoResultFound, exc_info=True)

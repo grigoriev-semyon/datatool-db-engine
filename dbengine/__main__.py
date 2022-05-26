@@ -35,4 +35,4 @@ from .column import *
 # update_column(get_branch(5), get_table(get_branch(5), 10)[0],
 #              get_column(get_branch(5), get_table(get_branch(5), 10)[0], 11)[0], name="aaaaaa", datatype="((")
 # delete_column(get_branch(3), get_column(get_branch(3), 7)[0])
-ok_branch(get_branch(3))
+ok_branch(get_branch(7))
