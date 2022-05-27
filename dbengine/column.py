@@ -18,7 +18,7 @@ def create_column(
     """Create column in table in branch"""
     logging.debug('create_column')
     try:
-        if branch.type == BranchTypes.MAIN:
+        if branch.type != BranchTypes.WIP:
             raise ProhibitedActionInBranch("Column creating", branch.name)
         s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()
         new_commit = Commit()
@@ -75,7 +75,7 @@ def update_column(
     """
     logging.debug('update_column')
     try:
-        if branch.type == BranchTypes.MAIN:
+        if branch.type != BranchTypes.WIP:
             raise ProhibitedActionInBranch("Column altering", branch.name)
         s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()
         new_commit = Commit()
@@ -112,7 +112,7 @@ def delete_column(branch: Branch, column: DbColumn):
     """
     logging.debug('delete_column')
     try:
-        if branch.type == BranchTypes.MAIN:
+        if branch.type != BranchTypes.WIP:
             raise ProhibitedActionInBranch("Column deleting", branch.name)
         s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(
             Commit.id.desc()).first()

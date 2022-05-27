@@ -16,7 +16,7 @@ def create_table(
     """Create table in branch with optional columns"""
     logging.debug("create_table")
     try:
-        if branch.type == BranchTypes.MAIN:
+        if branch.type != BranchTypes.WIP:
             raise ProhibitedActionInBranch("Table creating", branch.name)
         s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()
         new_commit = Commit()
@@ -64,7 +64,7 @@ def update_table(
     """Change name of table and commit to branch"""
     logging.debug("update_table")
     try:
-        if branch.type == BranchTypes.MAIN:
+        if branch.type != BranchTypes.WIP:
             raise ProhibitedActionInBranch("Table altering", branch.name)
         s = (session.query(Commit).filter(Commit.branch_id == branch.id)).order_by(Commit.id.desc()).first()
         new_commit = Commit()
@@ -95,7 +95,7 @@ def delete_table(branch: Branch, table: DbTable) -> Commit:
     """Delete table in branch"""
     logging.debug("delete_table")
     try:
-        if branch.type == BranchTypes.MAIN:
+        if branch.type != BranchTypes.WIP:
             raise ProhibitedActionInBranch("Deleting table", branch.name)
         s = session.query(Commit).filter(Commit.branch_id == table.id).order_by(Commit.id.desc()).first()
         new_commit = Commit()
