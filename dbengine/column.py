@@ -48,14 +48,15 @@ def create_column(
 
 
 def get_column(
-        branch: Branch,  id: int
+        branch: Branch, id: int
 ) -> Tuple[DbColumn, DbColumnAttributes]:
     """Get last version of column in table in branch"""
     logging.debug('get_column')
     try:
         s = session.query(Commit).filter(and_(Commit.branch_id == branch.id, Commit.attribute_id_out == id)).order_by(
             Commit.id.desc()).first()
-        return session.query(DbColumn).filter(DbColumn.id == s.attribute_id_out).one(), session.query(DbColumnAttributes).filter(
+        return session.query(DbColumn).filter(DbColumn.id == s.attribute_id_out).one(), session.query(
+            DbColumnAttributes).filter(
             DbColumnAttributes.column_id == s.attribute_id_out).one()
     except sqlalchemy.exc.NoResultFound:
         logging.error(sqlalchemy.exc.NoResultFound, exc_info=True)
@@ -76,29 +77,26 @@ def update_column(
     try:
         if branch.type != BranchTypes.WIP:
             raise ProhibitedActionInBranch("Column altering", branch.name)
+        prev_id = session.query(DbColumnAttributes).filter(DbColumnAttributes.column_id == column.id).order_by(
+            DbColumnAttributes.id.desc()).first().id
         s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()
         new_commit = Commit()
         new_commit.branch_id = branch.id
         if s:
             new_commit.prev_commit_id = s.id
-        new_commit.attribute_id_in = column.id
-        new_column = DbColumn()
-        new_column.type = AttributeTypes.COLUMN
-        new_column.table_id = column.table_id
-        session.add(new_column)
-        session.flush()
+        new_commit.attribute_id_in = prev_id
         new_column_attribute = DbColumnAttributes()
         new_column_attribute.type = AttributeTypes.COLUMN
-        new_column_attribute.column_id = new_column.id
+        new_column_attribute.column_id = column.id
         new_column_attribute.datatype = datatype
         new_column_attribute.name = name
         session.add(new_column_attribute)
         session.flush()
-        new_commit.attribute_id_out = new_column.id
+        new_commit.attribute_id_out = new_column_attribute.id
         session.add(new_commit)
         session.flush()
         session.commit()
-        return new_column, new_column_attribute, new_commit
+        return column, new_column_attribute, new_commit
     except AttributeError:
         logging.error(AttributeError, exc_info=True)
 

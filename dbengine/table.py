@@ -66,27 +66,25 @@ def update_table(
     try:
         if branch.type != BranchTypes.WIP:
             raise ProhibitedActionInBranch("Table altering", branch.name)
+        prev_id = session.query(DbTable).filter(DbTableAttributes.table_id == table.id).order_by(
+            DbTableAttributes.id.desc()).first().id
         s = (session.query(Commit).filter(Commit.branch_id == branch.id)).order_by(Commit.id.desc()).first()
         new_commit = Commit()
         new_commit.branch_id = branch.id
         if s:
             new_commit.prev_commit_id = s.id
-        new_commit.attribute_id_in = table.id
-        new_table = DbTable()
-        new_table.type = AttributeTypes.TABLE
-        session.add(new_table)
-        session.flush()
+        new_commit.attribute_id_in = prev_id
         new_table_attribute = DbTableAttributes()
         new_table_attribute.type = AttributeTypes.TABLE
-        new_table_attribute.table_id = new_table.id
+        new_table_attribute.table_id = table.id
         new_table_attribute.name = name
         session.add(new_table_attribute)
         session.flush()
-        new_commit.attribute_id_out = new_table.id
+        new_commit.attribute_id_out = new_table_attribute.id
         session.add(new_commit)
         session.flush()
         session.commit()
-        return new_table, new_table_attribute, new_commit
+        return table, new_table_attribute, new_commit
     except AttributeError:
         logging.error(AttributeError, exc_info=True)
 
