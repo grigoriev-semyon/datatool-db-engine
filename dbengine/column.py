@@ -63,7 +63,6 @@ def get_column(
 
 def update_column(
         branch: Branch,
-        table: DbTable,
         column: DbColumn,
         *,
         name: Optional[str] = None,
@@ -85,7 +84,7 @@ def update_column(
         new_commit.attribute_id_in = column.id
         new_column = DbColumn()
         new_column.type = AttributeTypes.COLUMN
-        new_column.table_id = table.id
+        new_column.table_id = column.table_id
         session.add(new_column)
         session.flush()
         new_column_attribute = DbColumnAttributes()
