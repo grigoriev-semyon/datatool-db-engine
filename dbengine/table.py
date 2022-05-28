@@ -43,17 +43,18 @@ def create_table(
         logging.error(AttributeError, exc_info=True)
 
 
+## fix me
 def get_table(
         branch: Branch, id: int
 ) -> Tuple[DbTable, DbTableAttributes]:
     """Return table and last attributes in branch by id or name"""
     logging.debug("get_table")
     try:
-        s = session.query(Commit).filter(and_(Commit.branch_id == branch.id, Commit.attribute_id_out == id)).order_by(
-        Commit.id.desc()).first()
-        return session.query(DbTable).filter(DbTable.id == s.attribute_id_out).one(), session.query(
+        s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()
+        ## table_id = session.query(DbTableAttributes).filter(DbTableAttributes.id == s.attribute_id_out).one().table_id
+        return session.query(DbTable).filter(DbTable.id == id).one(), session.query(
             DbTableAttributes).filter(
-            DbTableAttributes.table_id == s.attribute_id_out).one()
+            DbTableAttributes.table_id == id).order_by(DbTableAttributes.id.desc()).first()
     except sqlalchemy.exc.NoResultFound:
         logging.error(sqlalchemy.exc.NoResultFound, exc_info=True)
 
@@ -89,15 +90,15 @@ def update_table(
         logging.error(AttributeError, exc_info=True)
 
 
-def delete_table(branch: Branch, table: DbTable) -> Commit:
+def delete_table(branch: Branch, table_and_last_attributes: Tuple[DbTable, DbTableAttributes]) -> Commit:
     """Delete table in branch"""
     logging.debug("delete_table")
     try:
         if branch.type != BranchTypes.WIP:
             raise ProhibitedActionInBranch("Deleting table", branch.name)
-        s = session.query(Commit).filter(Commit.branch_id == table.id).order_by(Commit.id.desc()).first()
+        s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()
         new_commit = Commit()
-        new_commit.attribute_id_in = table.id
+        new_commit.attribute_id_in = table_and_last_attributes[1].id
         if s:
             new_commit.prev_commit_id = s.id
         new_commit.attribute_id_out = None
