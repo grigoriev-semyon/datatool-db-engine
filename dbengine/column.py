@@ -127,14 +127,14 @@ def update_column(
         logging.error(AttributeError, exc_info=True)
 
 
-def delete_column(branch: Branch, column:DbColumn, *, session: Session):
+def delete_column(branch: Branch, column:DbColumn, *, session: Session) -> Commit:
     """Delete column from table from branch
 
     То есть надо удалить у колонки атрибуты, сам объект колонки останется
     То есть создать коммит с пустым концом
     """
     logging.debug('delete_column')
-    column_and_attributes = get_column(branch, column.id)
+    column_and_attributes = get_column(branch, column.id, session=session)
     try:
         if branch.type != BranchTypes.WIP:
             raise ProhibitedActionInBranch("Column deleting", branch.name)
@@ -147,6 +147,7 @@ def delete_column(branch: Branch, column:DbColumn, *, session: Session):
         new_commit.attribute_id_out = None
         session.add(new_commit)
         session.flush()
+        return new_commit
 
     except AttributeError:
         logging.error(AttributeError, exc_info=True)

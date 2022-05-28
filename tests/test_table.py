@@ -109,3 +109,29 @@ def test_column_update():
     assert tcol.id == ucol_1.id
     assert tcol_attr.name == "uid"
     assert tcol_attr.datatype == "integer"
+
+
+def test_table_delete():
+    session = Session()
+    branch = create_branch("Test Table 1", session=session)
+    table, attrs, _ = create_table(branch, "test_table_1", session=session)
+    col_1, _, _ = create_column(branch, table, name="id", datatype="string", session=session)
+    ucommit = delete_table(branch, table, session=session)
+
+    assert ucommit.attribute_id_in == attrs.id
+    assert ucommit.attribute_id_out is None
+
+    # Ну потому что когда мы удалили таблицу должны удаляться и колонки
+    with pytest.raises(ColumnDoesntExists):
+        get_column(branch, col_1.id, session=session)
+
+
+def test_column_delete():
+    session = Session()
+    branch = create_branch("Test Table 1", session=session)
+    table, _, _ = create_table(branch, "test_table_1", session=session)
+    col, attrs, _ = create_column(branch, table, name="id", datatype="string", session=session)
+    ucommit = delete_column(branch, col, session=session)
+
+    assert ucommit.attribute_id_in == attrs.id
+    assert ucommit.attribute_id_out is None
