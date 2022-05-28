@@ -140,11 +140,3 @@ def test_column_delete():
 
     assert ucommit.attribute_id_in == attrs.id
     assert ucommit.attribute_id_out is None
-
-
-def test_inside():
-    session = Session()
-    branch = create_branch("Test Table 1", session=session)
-    table, _, _ = create_table(branch, "test_table_1", session=session)
-    col, attrs, _ = create_column(branch, table, name="id", datatype="string", session=session)
-    assert False, table.columns

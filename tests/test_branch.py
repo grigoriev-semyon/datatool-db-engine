@@ -10,7 +10,6 @@ from . import Session
 def test_main():
     session = Session()
     branch = get_branch(1, session=session)
-    session.commit()
     assert branch.name == "MAIN BRANCH"
     assert branch.type == BranchTypes.MAIN
     with pytest.raises(BranchError):
@@ -31,7 +30,6 @@ def test_branch_ok():
     ok_branch(branch, session=session)
     with pytest.raises(BranchError):
         create_table(branch, "Test Branch 1", session=session)
-    session.commit()
 
     assert branch.type == BranchTypes.MERGED
     assert branch.name == "Test 1"
@@ -51,5 +49,3 @@ def test_branch_mr():
     unrequest_merge_branch(branch, session=session)
     assert branch.type == BranchTypes.WIP
     create_table(branch, "Test Branch 2", session=session)
-
-    session.commit()

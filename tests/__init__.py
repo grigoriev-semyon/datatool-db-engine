@@ -8,4 +8,4 @@ __all__ = ["SessionType", "Session", "engine", "settings"]
 
 settings = Settings()
 engine = create_engine(settings.DB_DSN)
-Session = sessionmaker(engine)
+Session = sessionmaker(engine, autocommit=True, autoflush=False)
