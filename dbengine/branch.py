@@ -19,7 +19,7 @@ def create_main_branch(*, session: Session) -> Branch:
     if s > 0:
         raise BranchError("Main branch already exists")
     new_branch = Branch()
-    new_branch.name = "Main"
+    new_branch.name = "MAIN BRANCH"
     new_branch.type = BranchTypes.MAIN
     session.add(new_branch)
     session.flush()

@@ -48,25 +48,25 @@ def get_table(branch: Branch, id: int, *, session: Session) -> Tuple[DbTable, Db
     try:
         attr_id = (
             session.query(DbTableAttributes)
-            .filter(DbTableAttributes.table_id == id)
-            .order_by(DbTableAttributes.id)
-            .first()
-            .id
+                .filter(DbTableAttributes.table_id == id)
+                .order_by(DbTableAttributes.id)
+                .first()
+                .id
         )
         commits = (
             session.query(Commit)
-            .filter(Commit.branch_id == branch.id)
-            .filter(Commit.attribute_id_out == attr_id)
-            .filter(Commit.attribute_id_in.is_(None))
-            .one_or_none()
+                .filter(Commit.branch_id == branch.id)
+                .filter(Commit.attribute_id_out == attr_id)
+                .filter(Commit.attribute_id_in.is_(None))
+                .one_or_none()
         )
         if not commits:
             raise TableDoesntExists(id, branch.name)
         while True:
             commits = (
                 session.query(Commit)
-                .filter(and_(Commit.branch_id == branch.id, Commit.attribute_id_in == attr_id))
-                .one_or_none()
+                    .filter(and_(Commit.branch_id == branch.id, Commit.attribute_id_in == attr_id))
+                    .one_or_none()
             )
             if not commits:
                 break
@@ -76,22 +76,23 @@ def get_table(branch: Branch, id: int, *, session: Session) -> Tuple[DbTable, Db
         return (
             session.query(DbTable).filter(DbTable.id == id).one(),
             session.query(DbTableAttributes)
-            .filter(and_(DbTableAttributes.table_id == id, DbTableAttributes.id == attr_id))
-            .one(),
+                .filter(and_(DbTableAttributes.table_id == id, DbTableAttributes.id == attr_id))
+                .one(),
         )
     except sqlalchemy.exc.NoResultFound:
         logging.error(sqlalchemy.exc.NoResultFound, exc_info=True)
 
 
 def update_table(
-    branch: Branch,
-    table_and_last_attributes: Tuple[DbTable, DbTableAttributes],
-    name: str,
-    *,
-    session: Session,
+        branch: Branch,
+        table: DbTable,
+        name: str,
+        *,
+        session: Session,
 ) -> Tuple[DbTable, DbTableAttributes, Commit]:
     """Change name of table and commit to branch"""
     logging.debug("update_table")
+    table_and_last_attributes = get_table(branch, table.id, session=session)
     try:
         if branch.type != BranchTypes.WIP:
             raise ProhibitedActionInBranch("Table altering", branch.name)
@@ -117,13 +118,14 @@ def update_table(
 
 
 def delete_table(
-    branch: Branch,
-    table_and_last_attributes: Tuple[DbTable, DbTableAttributes],
-    *,
-    session: Session,
+        branch: Branch,
+        table: DbTable,
+        *,
+        session: Session,
 ) -> Commit:
     """Delete table in branch"""
     logging.debug("delete_table")
+    table_and_last_attributes = get_table(branch, table.id, session=session)
     try:
         if branch.type != BranchTypes.WIP:
             raise ProhibitedActionInBranch("Deleting table", branch.name)

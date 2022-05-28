@@ -11,7 +11,7 @@ def test_main():
     session = Session()
     branch = get_branch(1, session=session)
     session.commit()
-    assert branch.name == "Main"
+    assert branch.name == "MAIN BRANCH"
     assert branch.type == BranchTypes.MAIN
     with pytest.raises(BranchError):
         create_main_branch(session=session)
