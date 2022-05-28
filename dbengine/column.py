@@ -4,7 +4,7 @@ from typing import Optional, Tuple, Union
 import sqlalchemy.exc
 from sqlalchemy import and_
 
-from .exceptions import ProhibitedActionInBranch
+from .exceptions import ProhibitedActionInBranch, ColumnDeleted, ColumnDoesntExists
 from .models import Branch, Commit, DbColumn, DbColumnAttributes, DbTable, BranchTypes, AttributeTypes
 
 logger = logging.getLogger(__name__)
@@ -53,11 +53,21 @@ def get_column(
     """Get last version of column in table in branch"""
     logging.debug('get_column')
     try:
-        s = session.query(Commit).filter(and_(Commit.branch_id == branch.id, Commit.attribute_id_out == id)).order_by(
-            Commit.id.desc()).first()
-        return session.query(DbColumn).filter(DbColumn.id == s.attribute_id_out).one(), session.query(
-            DbColumnAttributes).filter(
-            DbColumnAttributes.column_id == s.attribute_id_out).one()
+        commits = session.query(Commit).filter(
+            and_(Commit.branch_id == branch.id, Commit.attribute_id_out == id, Commit.attribute_id_in is None)).one()
+        if not commits:
+            raise ColumnDoesntExists(id, branch.name)
+        attr_id = commits.attribute_id_out
+        while True:
+            commits = session.query(Commit).filter(
+                and_(Commit.branch_id == branch.id, Commit.attribute_id_in == attr_id)).one()
+            if not commits:
+                break
+            if commits.attribute_id_out is None:
+                raise ColumnDeleted(id, branch.name)
+            attr_id = commits.attribute_id_out
+        return session.query(DbColumn).filter(DbColumn.id == id).one(), session.query(
+            DbColumnAttributes).filter(and_(DbColumnAttributes.column_id == id, DbColumnAttributes.id == attr_id)).one()
     except sqlalchemy.exc.NoResultFound:
         logging.error(sqlalchemy.exc.NoResultFound, exc_info=True)
 

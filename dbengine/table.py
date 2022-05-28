@@ -43,7 +43,6 @@ def create_table(
         logging.error(AttributeError, exc_info=True)
 
 
-## fix me
 def get_table(
         branch: Branch, id: int
 ) -> Tuple[DbTable, DbTableAttributes]:
