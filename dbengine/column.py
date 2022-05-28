@@ -56,15 +56,14 @@ def get_column(
         attr_id = session.query(DbColumnAttributes).filter(DbColumnAttributes.column_id == id).order_by(
             DbColumnAttributes.id).first().id
         commits = session.query(Commit).filter(Commit.branch_id == branch.id).filter(
-            Commit.attribute_id_out == attr_id).filter(Commit.attribute_id_in.is_(None)).one()
+            Commit.attribute_id_out == attr_id).filter(Commit.attribute_id_in.is_(None)).one_or_none()
         if not commits:
             raise ColumnDoesntExists(id, branch.name)
         attr_id = commits.attribute_id_out
         while True:
-            try:
-                commits = session.query(Commit).filter(
-                    and_(Commit.branch_id == branch.id, Commit.attribute_id_in == attr_id)).one()
-            except sqlalchemy.exc.NoResultFound:
+            commits = session.query(Commit).filter(
+                and_(Commit.branch_id == branch.id, Commit.attribute_id_in == attr_id)).one_or_none()
+            if not commits:
                 break
             if commits.attribute_id_out is None:
                 raise ColumnDeleted(id, branch.name)

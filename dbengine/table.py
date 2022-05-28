@@ -52,14 +52,13 @@ def get_table(
         attr_id = session.query(DbTableAttributes).filter(DbTableAttributes.table_id == id).order_by(
             DbTableAttributes.id).first().id
         commits = session.query(Commit).filter(Commit.branch_id == branch.id).filter(
-            Commit.attribute_id_out == attr_id).filter(Commit.attribute_id_in.is_(None)).one()
+            Commit.attribute_id_out == attr_id).filter(Commit.attribute_id_in.is_(None)).one_or_none()
         if not commits:
             raise TableDoesntExists(id, branch.name)
         while True:
-            try:
-                commits = session.query(Commit).filter(
-                    and_(Commit.branch_id == branch.id, Commit.attribute_id_in == attr_id)).one()
-            except sqlalchemy.exc.NoResultFound:
+            commits = session.query(Commit).filter(
+                    and_(Commit.branch_id == branch.id, Commit.attribute_id_in == attr_id)).one_or_none()
+            if not commits:
                 break
             if commits.attribute_id_out is None:
                 raise TableDeleted(id, branch.name)
