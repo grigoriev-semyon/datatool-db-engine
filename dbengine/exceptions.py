@@ -42,4 +42,4 @@ class ColumnDoesntExists(ColumnError):
 
 class ColumnDeleted(ColumnError):
     def __init__(self, column_id: int, branch_name: str):
-        super().__init__(message=f"Table {column_id} was deleted in {branch_name} branch")
+        super().__init__(message=f"Column {column_id} was deleted in {branch_name} branch")

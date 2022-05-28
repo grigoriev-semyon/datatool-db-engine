@@ -6,7 +6,8 @@ from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 from .exceptions import ProhibitedActionInBranch, TableDoesntExists, TableDeleted
-from .models import Branch, Commit, DbTable, DbTableAttributes, BranchTypes, AttributeTypes
+from .models import Branch, Commit, DbTable, DbTableAttributes, BranchTypes, AttributeTypes, DbColumn
+from .column import delete_column, get_column
 
 logger = logging.getLogger(__name__)
 
@@ -130,6 +131,7 @@ def delete_table(
         if branch.type != BranchTypes.WIP:
             raise ProhibitedActionInBranch("Deleting table", branch.name)
         s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()
+        columns = session.query(DbColumn).filter(DbColumn.table_id == table.id).all()
         new_commit = Commit()
         new_commit.attribute_id_in = table_and_last_attributes[1].id
         if s:
@@ -138,7 +140,8 @@ def delete_table(
         new_commit.branch_id = branch.id
         session.add(new_commit)
         session.flush()
-
+        for row in columns:
+            delete_column(branch, row, session=session)
         return new_commit
     except AttributeError:
         logging.error(AttributeError, exc_info=True)
