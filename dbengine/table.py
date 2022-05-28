@@ -4,7 +4,7 @@ from typing import List, Optional, Tuple, Union
 import sqlalchemy.exc
 from sqlalchemy import and_
 
-from .exceptions import ProhibitedActionInBranch
+from .exceptions import ProhibitedActionInBranch, TableDoesntExists, TableDeleted
 from .models import Branch, Commit, DbColumn, DbTable, DbTableAttributes, BranchTypes, session, AttributeTypes
 
 logger = logging.getLogger(__name__)
@@ -50,34 +50,42 @@ def get_table(
     """Return table and last attributes in branch by id or name"""
     logging.debug("get_table")
     try:
-        s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()
-        ## table_id = session.query(DbTableAttributes).filter(DbTableAttributes.id == s.attribute_id_out).one().table_id
+        commits = session.query(Commit).filter(
+            and_(Commit.branch_id == branch.id, Commit.attribute_id_out == id, Commit.attribute_id_in is None)).one()
+        if not commits:
+            raise TableDoesntExists(id, branch.name)
+        attr_id = commits.attribute_id_out
+        while True:
+            commits = session.query(Commit).filter(
+                and_(Commit.branch_id == branch.id, Commit.attribute_id_in == attr_id)).one()
+            if not commits:
+                break
+            if commits.attribute_id_out is None:
+                raise TableDeleted(id, branch.name)
+            attr_id = commits.attribute_id_out
         return session.query(DbTable).filter(DbTable.id == id).one(), session.query(
-            DbTableAttributes).filter(
-            DbTableAttributes.table_id == id).order_by(DbTableAttributes.id.desc()).first()
+            DbTableAttributes).filter(and_(DbTableAttributes.table_id == id, DbTableAttributes.id == attr_id)).one()
     except sqlalchemy.exc.NoResultFound:
         logging.error(sqlalchemy.exc.NoResultFound, exc_info=True)
 
 
 def update_table(
-        branch: Branch, table: DbTable, name: str
+        branch: Branch, table_and_last_attributes: Tuple[DbTable, DbTableAttributes], name: str
 ) -> Tuple[DbTable, DbTableAttributes, Commit]:
     """Change name of table and commit to branch"""
     logging.debug("update_table")
     try:
         if branch.type != BranchTypes.WIP:
             raise ProhibitedActionInBranch("Table altering", branch.name)
-        prev_id = session.query(DbTable).filter(DbTableAttributes.table_id == table.id).order_by(
-            DbTableAttributes.id.desc()).first().id
         s = (session.query(Commit).filter(Commit.branch_id == branch.id)).order_by(Commit.id.desc()).first()
         new_commit = Commit()
         new_commit.branch_id = branch.id
         if s:
             new_commit.prev_commit_id = s.id
-        new_commit.attribute_id_in = prev_id
+        new_commit.attribute_id_in = table_and_last_attributes[1].id
         new_table_attribute = DbTableAttributes()
         new_table_attribute.type = AttributeTypes.TABLE
-        new_table_attribute.table_id = table.id
+        new_table_attribute.table_id = table_and_last_attributes[0].id
         new_table_attribute.name = name
         session.add(new_table_attribute)
         session.flush()
@@ -85,7 +93,7 @@ def update_table(
         session.add(new_commit)
         session.flush()
         session.commit()
-        return table, new_table_attribute, new_commit
+        return table_and_last_attributes[0], new_table_attribute, new_commit
     except AttributeError:
         logging.error(AttributeError, exc_info=True)
 
