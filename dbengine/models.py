@@ -5,6 +5,7 @@ from enum import Enum
 from sqlalchemy import Column, DateTime
 from sqlalchemy import Enum as EnumDb
 from sqlalchemy import ForeignKey, Integer, String
+from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import as_declarative, declared_attr
 
 
@@ -30,7 +31,12 @@ class DbEntity(Base):
 
 class DbTable(DbEntity):
     id = Column(Integer, ForeignKey("db_entity.id"), primary_key=True)
+
     __mapper_args__ = {"polymorphic_identity": "TABLE"}
+    columns = relationship('DbColumn', back_populates='table', foreign_keys='DbColumn.table_id')
+
+    def __repr__(self) -> str:
+        return f'<Table id={self.id}>'
 
 
 class DbColumn(DbEntity):
@@ -38,6 +44,10 @@ class DbColumn(DbEntity):
     table_id = Column(Integer, ForeignKey("db_table.id"))
 
     __mapper_args__ = {"polymorphic_identity": "COLUMN"}
+    table = relationship('DbTable', back_populates='columns', foreign_keys='DbColumn.table_id')
+
+    def __repr__(self) -> str:
+        return f'<Column id={self.id}>'
 
 
 class DbAttributes(Base):
