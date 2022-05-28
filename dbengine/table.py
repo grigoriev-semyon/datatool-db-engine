@@ -34,7 +34,7 @@ def create_table(
         new_table_attribute.name = name
         session.add(new_table_attribute)
         session.flush()
-        new_commit.attribute_id_out = new_table.id
+        new_commit.attribute_id_out = new_table_attribute.id
         session.add(new_commit)
         session.flush()
         session.commit()
@@ -49,11 +49,12 @@ def get_table(
     """Return table and last attributes in branch by id or name"""
     logging.debug("get_table")
     try:
+        attr_id = session.query(DbTableAttributes).filter(DbTableAttributes.table_id == id).order_by(
+            DbTableAttributes.id).first().id
         commits = session.query(Commit).filter(Commit.branch_id == branch.id).filter(
-            Commit.attribute_id_out == id).filter(Commit.attribute_id_in.is_(None)).one()
+            Commit.attribute_id_out == attr_id).filter(Commit.attribute_id_in.is_(None)).one()
         if not commits:
             raise TableDoesntExists(id, branch.name)
-        attr_id = commits.attribute_id_out
         while True:
             try:
                 commits = session.query(Commit).filter(

@@ -108,7 +108,7 @@ def ok_branch(branch: Branch) -> Branch:
         if row.prev_commit_id == 1:
             new_commit.prev_commit_id = 1
         else:
-            prev_commit = session.query(Commit).filter(Commit.dev_branch_id == branch.id).order_by(Commit.id).first()
+            prev_commit = session.query(Commit).filter(Commit.dev_branch_id == branch.id).order_by(Commit.id.desc()).first()
             new_commit.prev_commit_id = prev_commit.id
         session.add(new_commit)
         session.flush()

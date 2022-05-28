@@ -38,7 +38,7 @@ def create_column(
         new_column_attribute.name = name
         session.add(new_column_attribute)
         session.flush()
-        new_commit.attribute_id_out = new_column.id
+        new_commit.attribute_id_out = new_column_attribute.id
         session.add(new_commit)
         session.flush()
         session.commit()
@@ -53,8 +53,10 @@ def get_column(
     """Get last version of column in table in branch"""
     logging.debug('get_column')
     try:
+        attr_id = session.query(DbColumnAttributes).filter(DbColumnAttributes.column_id == id).order_by(
+            DbColumnAttributes.id).first().id
         commits = session.query(Commit).filter(Commit.branch_id == branch.id).filter(
-            Commit.attribute_id_out == id).filter(Commit.attribute_id_in.is_(None)).one()
+            Commit.attribute_id_out == attr_id).filter(Commit.attribute_id_in.is_(None)).one()
         if not commits:
             raise ColumnDoesntExists(id, branch.name)
         attr_id = commits.attribute_id_out
@@ -75,7 +77,7 @@ def get_column(
 
 def update_column(
         branch: Branch,
-        column: DbColumn,
+        column_and_attributes: Tuple[DbColumn, DbColumnAttributes],
         *,
         name: Optional[str] = None,
         datatype: Optional[str] = None
@@ -88,17 +90,15 @@ def update_column(
     try:
         if branch.type != BranchTypes.WIP:
             raise ProhibitedActionInBranch("Column altering", branch.name)
-        prev_id = session.query(DbColumnAttributes).filter(DbColumnAttributes.column_id == column.id).order_by(
-            DbColumnAttributes.id.desc()).first().id
         s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()
         new_commit = Commit()
         new_commit.branch_id = branch.id
         if s:
             new_commit.prev_commit_id = s.id
-        new_commit.attribute_id_in = prev_id
+        new_commit.attribute_id_in = column_and_attributes[1].id
         new_column_attribute = DbColumnAttributes()
         new_column_attribute.type = AttributeTypes.COLUMN
-        new_column_attribute.column_id = column.id
+        new_column_attribute.column_id = column_and_attributes[0].id
         new_column_attribute.datatype = datatype
         new_column_attribute.name = name
         session.add(new_column_attribute)
@@ -107,12 +107,12 @@ def update_column(
         session.add(new_commit)
         session.flush()
         session.commit()
-        return column, new_column_attribute, new_commit
+        return column_and_attributes[0], new_column_attribute, new_commit
     except AttributeError:
         logging.error(AttributeError, exc_info=True)
 
 
-def delete_column(branch: Branch, column: DbColumn):
+def delete_column(branch: Branch, column_and_attributes: Tuple[DbColumn, DbColumnAttributes]):
     """Delete column from table from branch
 
     То есть надо удалить у колонки атрибуты, сам объект колонки останется
@@ -128,7 +128,7 @@ def delete_column(branch: Branch, column: DbColumn):
         new_commit.branch_id = branch.id
         if s:
             new_commit.prev_commit_id = s.id
-        new_commit.attribute_id_in = column.table_id
+        new_commit.attribute_id_in = column_and_attributes[1].id
         new_commit.attribute_id_out = None
         session.add(new_commit)
         session.flush()
