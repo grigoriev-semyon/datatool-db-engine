@@ -18,7 +18,7 @@ from .column import *
 ##get_table(get_branch(2), 1)
 # update_table(get_branch(2), get_table(get_branch(2), 1), "test_up22d222ate2")
 # delete_table(get_branch(2), get_table(get_branch(2), 1))
-
+create_column(get_branch(2), get_table(get_branch(2), 1))
 # create_branch('test2')
 # create_table(get_branch(3), 'testtable2')
 # create_column(get_branch(3), get_table(get_branch(3), 2)[0], name="testcolumn", datatype="testtype")

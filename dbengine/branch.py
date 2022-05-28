@@ -8,22 +8,24 @@ from sqlalchemy.orm import sessionmaker
 from .models import Branch, BranchTypes, Commit
 from .settings import Settings
 from .exceptions import ProhibitedActionInBranch, IncorrectBranchType, BranchError
+from .models import create_tables
 
 from .models import session
 
 logger = logging.getLogger(__name__)
 
 
-def init_main() -> Branch:
-    """Инициализировать ветку main если веток еще не существует.
+def create_main_branch() -> Branch:
+    """Создать ветку main если веток еще не существует.
 
     Тип ветки MAIN, название ветки Main
     """
+    logger.debug("create_main_branch")
     s = session.query(Branch).all()
     if s:
         raise BranchError("Main branch already exists")
     new_branch = Branch()
-    new_branch.name = "MAIN BRANCH"
+    new_branch.name = "Main"
     new_branch.type = BranchTypes.MAIN
     session.add(new_branch)
     session.flush()
@@ -32,8 +34,17 @@ def init_main() -> Branch:
     session.add(new_commit)
     session.flush()
     session.commit()
-    logger.debug("init_main")
+
     return new_branch
+
+
+def initialization() -> Branch:
+    """
+    Создать таблицы в базе данных и ветку Main
+    """
+    logger.debug("initialization")
+    create_tables()
+    return create_main_branch()
 
 
 def create_branch(name) -> Branch:
@@ -108,7 +119,8 @@ def ok_branch(branch: Branch) -> Branch:
         if row.prev_commit_id == 1:
             new_commit.prev_commit_id = 1
         else:
-            prev_commit = session.query(Commit).filter(Commit.dev_branch_id == branch.id).order_by(Commit.id.desc()).first()
+            prev_commit = session.query(Commit).filter(Commit.dev_branch_id == branch.id).order_by(
+                Commit.id.desc()).first()
             new_commit.prev_commit_id = prev_commit.id
         session.add(new_commit)
         session.flush()
