@@ -49,15 +49,17 @@ def get_table(
     """Return table and last attributes in branch by id or name"""
     logging.debug("get_table")
     try:
-        commits = session.query(Commit).filter(
-            and_(Commit.branch_id == branch.id, Commit.attribute_id_out == id, Commit.attribute_id_in is None)).one()
+        commits = None
+        commits = session.query(Commit).filter(Commit.branch_id == branch.id).filter(
+            Commit.attribute_id_out == id).filter(Commit.attribute_id_in.is_(None)).one()
         if not commits:
             raise TableDoesntExists(id, branch.name)
         attr_id = commits.attribute_id_out
         while True:
-            commits = session.query(Commit).filter(
-                and_(Commit.branch_id == branch.id, Commit.attribute_id_in == attr_id)).one()
-            if not commits:
+            try:
+                commits = session.query(Commit).filter(
+                    and_(Commit.branch_id == branch.id, Commit.attribute_id_in == attr_id)).one()
+            except sqlalchemy.exc.NoResultFound:
                 break
             if commits.attribute_id_out is None:
                 raise TableDeleted(id, branch.name)
