@@ -15,8 +15,8 @@ def create_main_branch(*, session: Session) -> Branch:
     Тип ветки MAIN, название ветки Main
     """
     logger.debug("create_main_branch")
-    s = session.query(Branch).all()
-    if s:
+    s = session.query(Branch).count()
+    if s > 0:
         raise BranchError("Main branch already exists")
     new_branch = Branch()
     new_branch.name = "Main"
