@@ -1,21 +1,15 @@
 import logging
-from typing import Union
 
 import sqlalchemy.exc
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session
 
 from .models import Branch, BranchTypes, Commit
-from .settings import Settings
-from .exceptions import ProhibitedActionInBranch, IncorrectBranchType, BranchError
-from .models import create_tables
-
-from .models import session
+from .exceptions import IncorrectBranchType, BranchError
 
 logger = logging.getLogger(__name__)
 
 
-def create_main_branch() -> Branch:
+def create_main_branch(*, session: Session) -> Branch:
     """Создать ветку main если веток еще не существует.
 
     Тип ветки MAIN, название ветки Main
@@ -33,21 +27,10 @@ def create_main_branch() -> Branch:
     new_commit.branch_id = new_branch.id
     session.add(new_commit)
     session.flush()
-    session.commit()
-
     return new_branch
 
 
-def initialization() -> Branch:
-    """
-    Создать таблицы в базе данных и ветку Main
-    """
-    logger.debug("initialization")
-    create_tables()
-    return create_main_branch()
-
-
-def create_branch(name) -> Branch:
+def create_branch(name, *, session: Session) -> Branch:
     """Создать новую ветку из головы main ветки.
 
     Тип ветки WIP, название ветки `name`
@@ -64,12 +47,11 @@ def create_branch(name) -> Branch:
     new_commit.branch_id = new_branch.id
     session.add(new_commit)
     session.flush()
-    session.commit()
     logger.debug("create_branch")
     return new_branch
 
 
-def request_merge_branch(branch: Branch) -> Branch:
+def request_merge_branch(branch: Branch, *, session: Session) -> Branch:
     """Поменять тип ветки на MR
 
     Только если сейчас WIP
@@ -79,12 +61,12 @@ def request_merge_branch(branch: Branch) -> Branch:
     branch.type = BranchTypes.MR
     session.query(Branch).filter(Branch.id == branch.id).update({"type": BranchTypes.MR})
     session.flush()
-    session.commit()
+
     logger.debug("request_merge_branch")
     return branch
 
 
-def unrequest_merge_branch(branch: Branch) -> Branch:
+def unrequest_merge_branch(branch: Branch, *, session: Session) -> Branch:
     """Поменять тип ветки на WIP
 
     Только если сейчас MR
@@ -94,12 +76,12 @@ def unrequest_merge_branch(branch: Branch) -> Branch:
     branch.type = BranchTypes.WIP
     session.query(Branch).filter(Branch.id == branch.id).update({"type": BranchTypes.WIP})
     session.flush()
-    session.commit()
+
     logger.debug("unrequest_merge_branch")
     return branch
 
 
-def ok_branch(branch: Branch) -> Branch:
+def ok_branch(branch: Branch, *, session: Session) -> Branch:
     """Поменять тип ветки на MERGED
 
     Только если сейчас MR
@@ -119,20 +101,18 @@ def ok_branch(branch: Branch) -> Branch:
         if row.prev_commit_id == 1:
             new_commit.prev_commit_id = 1
         else:
-            prev_commit = session.query(Commit).filter(Commit.dev_branch_id == branch.id).order_by(
-                Commit.id.desc()).first()
+            prev_commit = (
+                session.query(Commit).filter(Commit.dev_branch_id == branch.id).order_by(Commit.id.desc()).first()
+            )
             new_commit.prev_commit_id = prev_commit.id
         session.add(new_commit)
         session.flush()
-    session.commit()
+
     logger.debug("ok_branch")
     return branch
 
 
-def get_branch(id: int) -> Branch:
+def get_branch(id: int, *, session: Session) -> Branch:
     """Return branch by id or name"""
     logger.debug("get_branch")
-    try:
-        return session.query(Branch).filter(Branch.id == id).one()
-    except sqlalchemy.exc.NoResultFound:
-        logging.error(sqlalchemy.exc.NoResultFound, exc_info=True)
+    return session.query(Branch).get(id)

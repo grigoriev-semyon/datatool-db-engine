@@ -5,7 +5,6 @@ from .branch import (
     unrequest_merge_branch,
     ok_branch,
     get_branch,
-    initialization,
 )
 
 from .table import create_table, get_table, update_table, delete_table
@@ -27,5 +26,4 @@ __all__ = [
     "get_column",
     "update_column",
     "delete_column",
-    "initialization"
 ]

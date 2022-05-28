@@ -4,19 +4,8 @@ from enum import Enum
 
 from sqlalchemy import Column, DateTime
 from sqlalchemy import Enum as EnumDb
-from sqlalchemy import ForeignKey, Integer, String, create_engine
+from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.ext.declarative import as_declarative, declared_attr
-from sqlalchemy.orm import sessionmaker
-
-from .settings import Settings
-
-
-settings = Settings()
-
-engine = create_engine(settings.DB_DSN, echo=True)
-engine.connect()
-Session = sessionmaker(bind=engine)
-session = Session()
 
 
 @as_declarative()
@@ -103,7 +92,3 @@ class Commit(Base):
     attribute_id_in = Column(Integer, ForeignKey("db_attributes.id"))
     attribute_id_out = Column(Integer, ForeignKey("db_attributes.id"))
     create_ts = Column(DateTime, default=datetime.utcnow, nullable=False)
-
-
-def create_tables():
-    Base.metadata.create_all(engine)
