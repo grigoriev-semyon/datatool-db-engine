@@ -53,8 +53,8 @@ def get_column(
     """Get last version of column in table in branch"""
     logging.debug('get_column')
     try:
-        commits = session.query(Commit).filter(
-            and_(Commit.branch_id == branch.id, Commit.attribute_id_out == id, Commit.attribute_id_in is None)).one()
+        commits = session.query(Commit).filter(Commit.branch_id == branch.id).filter(
+            Commit.attribute_id_out == id).filter(Commit.attribute_id_in.is_(None)).one()
         if not commits:
             raise ColumnDoesntExists(id, branch.name)
         attr_id = commits.attribute_id_out

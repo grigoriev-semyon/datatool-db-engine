@@ -49,7 +49,6 @@ def get_table(
     """Return table and last attributes in branch by id or name"""
     logging.debug("get_table")
     try:
-        commits = None
         commits = session.query(Commit).filter(Commit.branch_id == branch.id).filter(
             Commit.attribute_id_out == id).filter(Commit.attribute_id_in.is_(None)).one()
         if not commits:
