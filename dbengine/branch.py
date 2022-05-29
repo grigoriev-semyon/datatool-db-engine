@@ -35,9 +35,10 @@ def create_branch(name, *, session: Session) -> Branch:
 
     Тип ветки WIP, название ветки `name`
     """
-    s = session.query(Branch).all()
+    s = session.query(Branch).filter(Branch.name == BranchTypes.MAIN).one_or_none()
     if not s:
         raise BranchError("Main branch does not exists")
+    last_commit = session.query(Commit).filter(Commit.branch_id == 1).order_by(Commit.id.desc()).first()
     new_branch = Branch()
     new_branch.name = name
     new_branch.type = BranchTypes.WIP
@@ -45,6 +46,7 @@ def create_branch(name, *, session: Session) -> Branch:
     session.flush()
     new_commit = Commit()
     new_commit.branch_id = new_branch.id
+    new_commit.prev_commit_id = last_commit.id
     session.add(new_commit)
     session.flush()
     logger.debug("create_branch")
@@ -98,12 +100,10 @@ def ok_branch(branch: Branch, *, session: Session) -> Branch:
         new_commit.attribute_id_in = row.attribute_id_in
         new_commit.attribute_id_out = row.attribute_id_out
         new_commit.branch_id = 1
-        if row.prev_commit_id == 1:
-            new_commit.prev_commit_id = 1
+        if row == s[0]:
+            new_commit.prev_commit_id = row.prev_commit_id
         else:
-            prev_commit = (
-                session.query(Commit).filter(Commit.dev_branch_id == branch.id).order_by(Commit.id.desc()).first()
-            )
+            prev_commit = session.query(Commit).filter(Commit.dev_branch_id == branch.id).order_by(Commit.id.desc()).first()
             new_commit.prev_commit_id = prev_commit.id
         session.add(new_commit)
         session.flush()

@@ -76,7 +76,7 @@ class DbColumnAttributes(DbAttributes):
 
 
 class BranchTypes(str, Enum):
-    MAIN = "MAIN"
+    MAIN = "MAIN BRANCH"
     WIP = "WORK IN PROGRESS"
     MR = "MERGE REQUEST"
     MERGED = "MERGED"

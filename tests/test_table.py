@@ -36,7 +36,6 @@ def test_table_get():
     attrs_id = attrs.id
     attrs_table_id = attrs.table_id
     attrs_name = attrs.name
-    session.commit()
 
     # Тут должно падать потому, что ветка была сделана в момент до того, как колонка была создана
     with pytest.raises(TableDoesntExists):
@@ -46,10 +45,9 @@ def test_table_get():
     ubranch = create_branch("Test Table 2", session=usession)
     # FIXME: В ветке не существует таблицы. Но эта таблица существует в main ветке и которая бранчуется позже
     utable, uattrs = get_table(ubranch, table_id, session=usession)
-    usession.commit()
 
     assert table_id == utable.id
-    assert attrs_id != uattrs.id, "Commit in branch and in main are different"
+    assert attrs_id == uattrs.id, "Commit in branch and in main are different"
     assert attrs_table_id == uattrs.table_id
     assert attrs_name == uattrs.name
 
