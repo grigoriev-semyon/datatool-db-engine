@@ -96,7 +96,7 @@ class Branch(Base):
 
 class Commit(Base):
     id = Column(Integer, primary_key=True)
-    prev_commit_id = Column(Integer, ForeignKey("commit.id"), default=1)
+    prev_commit_id = Column(Integer, ForeignKey("commit.id"))
     dev_branch_id = Column(Integer, ForeignKey("branch.id"), default=None)
     branch_id = Column(Integer)
     attribute_id_in = Column(Integer, ForeignKey("db_attributes.id"))

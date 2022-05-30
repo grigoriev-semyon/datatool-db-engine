@@ -41,70 +41,45 @@ def get_table(branch: Branch, id: int, *, session: Session) -> Tuple[DbTable, Db
     """Return table and last attributes in branch by id or name"""
     logging.debug("get_table")
     try:
-        is_table_created_in_main: bool = False
-        attr_id = (
-            session.query(DbTableAttributes)
-                .filter(DbTableAttributes.table_id == id)
-                .order_by(DbTableAttributes.id)
-                .first()
-                .id
-        )
-        if not attr_id:
-            raise TableDoesntExists(id, branch.name)
-        first_commit_in_branch_id = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(
-            Commit.id).first().id
-        first_commit_in_main = session.query(Commit).filter(
-            and_(Commit.branch_id == 1, Commit.id < first_commit_in_branch_id, Commit.attribute_id_in.is_(None),
-                 Commit.attribute_id_out == attr_id)).one_or_none()
-        if first_commit_in_main:
-            is_table_created_in_main = True
-            while True:
-                commits = session.query(Commit).filter(
-                    and_(Commit.branch_id == 1, Commit.id < first_commit_in_branch_id,
-                         Commit.attribute_id_in == attr_id)).one_or_none()
-                if not commits:
-                    break
-                if commits.attribute_id_out is None:
-                    raise TableDeleted(id, BranchTypes.MAIN)
-                attr_id = commits.attribute_id_out
-        if is_table_created_in_main:
-            while True:
-                commits = session.query(Commit).filter(
-                    and_(Commit.branch_id == branch.id, Commit.attribute_id_in == attr_id)).one_or_none()
-                if not commits:
-                    break
-                if commits.attribute_id_out is None:
-                    raise TableDeleted(id, branch.name)
-                attr_id = commits.attribute_id_out
-            return (session.query(DbTable).filter(DbTable.id == id).one(),
-                    session.query(DbTableAttributes)
-                    .filter(and_(DbTableAttributes.table_id == id, DbTableAttributes.id == attr_id))
-                    .one(),)
-        else:
-            commits = (
-                session.query(Commit)
-                    .filter(Commit.branch_id == branch.id)
-                    .filter(Commit.attribute_id_out == attr_id)
-                    .filter(Commit.attribute_id_in.is_(None))
-                    .one_or_none()
-            )
-            if not commits:
-                raise TableDoesntExists(id, branch.name)
-            while True:
-                commits = (
-                    session.query(Commit)
-                        .filter(and_(Commit.branch_id == branch.id, Commit.attribute_id_in == attr_id))
-                        .one_or_none()
-                )
-                if not commits:
-                    break
-                if commits.attribute_id_out is None:
-                    raise TableDeleted(id, branch.name)
-                attr_id = commits.attribute_id_out
-            return (session.query(DbTable).filter(DbTable.id == id).one(),
-                    session.query(DbTableAttributes)
-                    .filter(and_(DbTableAttributes.table_id == id, DbTableAttributes.id == attr_id))
-                    .one())
+        commit_in_branch = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(
+            Commit.id.desc()).first()
+        prev_commit = commit_in_branch.prev_commit_id
+        while True:
+            attr_out, attr_in = commit_in_branch.attribute_id_out, commit_in_branch.attribute_id_in
+            if attr_in is None and attr_out is None:
+                if not prev_commit:
+                    raise TableDoesntExists(id, branch.name)
+                commit_in_branch = session.query(Commit).filter(and_(Commit.id == prev_commit,
+                                                                     or_(Commit.branch_id == 1,
+                                                                         Commit.branch_id == branch.id))).one_or_none()
+                prev_commit = commit_in_branch.prev_commit_id
+            elif attr_in is not None and attr_out is None:
+                s = session.query(DbTableAttributes).filter(DbTableAttributes.id == attr_in).one_or_none()
+                if s:
+                    if s.table_id == id:
+                        raise TableDeleted(id, branch.name)
+                else:
+                    if not prev_commit:
+                        raise TableDoesntExists(id, branch.name)
+                    commit_in_branch = session.query(Commit).filter(and_(Commit.id == prev_commit,
+                                                                         or_(Commit.branch_id == 1,
+                                                                             Commit.branch_id == branch.id))).one_or_none()
+                    prev_commit = commit_in_branch.prev_commit_id
+            elif (attr_in is not None and attr_out is not None) or (attr_in is None and attr_out is not None):
+                s = session.query(DbTableAttributes).filter(DbTableAttributes.id == attr_out).one_or_none()
+                if s:
+                    if s.table_id == id:
+                        return (session.query(DbTable).filter(DbTable.id == id).one(),
+                                session.query(DbTableAttributes)
+                                .filter(and_(DbTableAttributes.table_id == id, DbTableAttributes.id == attr_out))
+                                .one())
+
+                commit_in_branch = session.query(Commit).filter(and_(Commit.id == prev_commit,
+                                                                     or_(Commit.branch_id == 1,
+                                                                         Commit.branch_id == branch.id))).one_or_none()
+                prev_commit = commit_in_branch.prev_commit_id
+
+
     except sqlalchemy.exc.NoResultFound:
         logging.error(sqlalchemy.exc.NoResultFound, exc_info=True)
 
