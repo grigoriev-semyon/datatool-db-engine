@@ -19,19 +19,13 @@ def create_table(branch: Branch, name: str, *, session: Session) -> Tuple[DbTabl
         if branch.type != BranchTypes.WIP:
             raise ProhibitedActionInBranch("Table creating", branch.name)
         s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()
-        new_commit = Commit()
-        new_commit.branch_id = branch.id
+        new_commit = Commit(branch_id=branch.id, attribute_id_in=None)
         if s:
             new_commit.prev_commit_id = s.id
-        new_commit.attribute_id_in = None
-        new_table = DbTable()
-        new_table.type = AttributeTypes.TABLE
+        new_table = DbTable(type=AttributeTypes.TABLE)
         session.add(new_table)
         session.flush()
-        new_table_attribute = DbTableAttributes()
-        new_table_attribute.type = AttributeTypes.TABLE
-        new_table_attribute.table_id = new_table.id
-        new_table_attribute.name = name
+        new_table_attribute = DbTableAttributes(type=AttributeTypes.TABLE, table_id=new_table.id, name=name)
         session.add(new_table_attribute)
         session.flush()
         new_commit.attribute_id_out = new_table_attribute.id
@@ -142,10 +136,8 @@ def update_table(
         elif not (s and s_main):
             raise TableDoesntExists(table.id, branch.name)
         new_commit.attribute_id_in = table_and_last_attributes[1].id
-        new_table_attribute = DbTableAttributes()
-        new_table_attribute.type = AttributeTypes.TABLE
-        new_table_attribute.table_id = table_and_last_attributes[0].id
-        new_table_attribute.name = name
+        new_table_attribute = DbTableAttributes(type=AttributeTypes.TABLE, table_id=table_and_last_attributes[0].id,
+                                                name=name)
         session.add(new_table_attribute)
         session.flush()
         new_commit.attribute_id_out = new_table_attribute.id
@@ -171,12 +163,9 @@ def delete_table(
             raise ProhibitedActionInBranch("Deleting table", branch.name)
         s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()
         columns = session.query(DbColumn).filter(DbColumn.table_id == table.id).all()
-        new_commit = Commit()
-        new_commit.attribute_id_in = table_and_last_attributes[1].id
+        new_commit = Commit(attribute_id_in=table_and_last_attributes[1].id, attribute_id_out=None, branch_id=branch.id)
         if s:
             new_commit.prev_commit_id = s.id
-        new_commit.attribute_id_out = None
-        new_commit.branch_id = branch.id
         session.add(new_commit)
         session.flush()
         for row in columns:

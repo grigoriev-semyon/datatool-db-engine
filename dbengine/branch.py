@@ -18,13 +18,10 @@ def create_main_branch(*, session: Session) -> Branch:
     s = session.query(Branch).count()
     if s > 0:
         raise BranchError("Main branch already exists")
-    new_branch = Branch()
-    new_branch.name = "MAIN BRANCH"
-    new_branch.type = BranchTypes.MAIN
+    new_branch = Branch(name="MAIN BRANCH", type=BranchTypes.MAIN)
     session.add(new_branch)
     session.flush()
-    new_commit = Commit()
-    new_commit.branch_id = new_branch.id
+    new_commit = Commit(branch_id=new_branch.id)
     session.add(new_commit)
     session.flush()
     return new_branch
@@ -39,14 +36,10 @@ def create_branch(name, *, session: Session) -> Branch:
     if not s:
         raise BranchError("Main branch does not exists")
     last_commit = session.query(Commit).filter(Commit.branch_id == 1).order_by(Commit.id.desc()).first()
-    new_branch = Branch()
-    new_branch.name = name
-    new_branch.type = BranchTypes.WIP
+    new_branch = Branch(name=name, type=BranchTypes.WIP)
     session.add(new_branch)
     session.flush()
-    new_commit = Commit()
-    new_commit.branch_id = new_branch.id
-    new_commit.prev_commit_id = last_commit.id
+    new_commit = Commit(branch_id=new_branch.id, prev_commit_id=last_commit.id)
     session.add(new_commit)
     session.flush()
     logger.debug("create_branch")
@@ -63,7 +56,6 @@ def request_merge_branch(branch: Branch, *, session: Session) -> Branch:
     branch.type = BranchTypes.MR
     session.query(Branch).filter(Branch.id == branch.id).update({"type": BranchTypes.MR})
     session.flush()
-
     logger.debug("request_merge_branch")
     return branch
 
@@ -95,15 +87,13 @@ def ok_branch(branch: Branch, *, session: Session) -> Branch:
     session.flush()
     s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id).all()
     for row in s:
-        new_commit = Commit()
-        new_commit.dev_branch_id = branch.id
-        new_commit.attribute_id_in = row.attribute_id_in
-        new_commit.attribute_id_out = row.attribute_id_out
-        new_commit.branch_id = 1
+        new_commit = Commit(dev_branch_id=branch.id, attribute_id_in=row.attribute_id_in,
+                            attribute_id_out=row.attribute_id_out, branch_id=1)
         if row == s[0]:
             new_commit.prev_commit_id = row.prev_commit_id
         else:
-            prev_commit = session.query(Commit).filter(Commit.dev_branch_id == branch.id).order_by(Commit.id.desc()).first()
+            prev_commit = session.query(Commit).filter(Commit.dev_branch_id == branch.id).order_by(
+                Commit.id.desc()).first()
             new_commit.prev_commit_id = prev_commit.id
         session.add(new_commit)
         session.flush()
