@@ -50,6 +50,7 @@ def get_column(branch: Branch, id: int, *, session: Session) -> Tuple[DbColumn, 
     """Get last version of column in table in branch"""
     logging.debug('get_column')
     try:
+        column_created_in_main: bool = False
         attr_id = (
             session.query(DbColumnAttributes)
                 .filter(DbColumnAttributes.column_id == id)
@@ -57,33 +58,62 @@ def get_column(branch: Branch, id: int, *, session: Session) -> Tuple[DbColumn, 
                 .first()
                 .id
         )
-        commits = (
-            session.query(Commit)
-                .filter(Commit.branch_id == branch.id)
-                .filter(Commit.attribute_id_out == attr_id)
-                .filter(Commit.attribute_id_in.is_(None))
-                .one_or_none()
-        )
-        if not commits:
+        if not attr_id:
             raise ColumnDoesntExists(id, branch.name)
-        attr_id = commits.attribute_id_out
-        while True:
+        first_commit_in_branch_id = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(
+            Commit.id).first().id
+        first_commit_in_main = session.query(Commit).filter(
+            and_(Commit.branch_id == 1, Commit.id < first_commit_in_branch_id, Commit.attribute_id_in.is_(None),
+                 Commit.attribute_id_out == attr_id)).one_or_none()
+        if first_commit_in_main:
+            column_created_in_main = True
+            while True:
+                commits = session.query(Commit).filter(
+                    and_(Commit.branch_id == 1, Commit.id < first_commit_in_branch_id,
+                         Commit.attribute_id_in == attr_id)).one_or_none()
+                if not commits:
+                    break
+                if commits.attribute_id_out is None:
+                    raise ColumnDeleted(id, BranchTypes.MAIN)
+                attr_id = commits.attribute_id_out
+        if column_created_in_main:
+            while True:
+                commits = session.query(Commit).filter(
+                    and_(Commit.branch_id == branch.id, Commit.attribute_id_in == attr_id)).one_or_none()
+                if not commits:
+                    break
+                if commits.attribute_id_out is None:
+                    raise ColumnDeleted(id, branch.name)
+                attr_id = commits.attribute_id_out
+            return (session.query(DbColumn).filter(DbColumn.id == id).one(),
+                    session.query(DbColumnAttributes)
+                    .filter(and_(DbColumnAttributes.column_id == id, DbColumnAttributes.id == attr_id))
+                    .one())
+        else:
             commits = (
                 session.query(Commit)
-                    .filter(and_(Commit.branch_id == branch.id, Commit.attribute_id_in == attr_id))
+                    .filter(Commit.branch_id == branch.id)
+                    .filter(Commit.attribute_id_out == attr_id)
+                    .filter(Commit.attribute_id_in.is_(None))
                     .one_or_none()
             )
             if not commits:
-                break
-            if commits.attribute_id_out is None:
-                raise ColumnDeleted(id, branch.name)
-            attr_id = commits.attribute_id_out
-        return (
-            session.query(DbColumn).filter(DbColumn.id == id).one(),
-            session.query(DbColumnAttributes)
-                .filter(and_(DbColumnAttributes.column_id == id, DbColumnAttributes.id == attr_id))
-                .one(),
-        )
+                raise ColumnDoesntExists(id, branch.name)
+            while True:
+                commits = (
+                    session.query(Commit)
+                        .filter(and_(Commit.branch_id == branch.id, Commit.attribute_id_in == attr_id))
+                        .one_or_none()
+                )
+                if not commits:
+                    break
+                if commits.attribute_id_out is None:
+                    raise ColumnDeleted(id, branch.name)
+                attr_id = commits.attribute_id_out
+            return (session.query(DbColumn).filter(DbColumn.id == id).one(),
+                    session.query(DbColumnAttributes)
+                    .filter(and_(DbColumnAttributes.column_id == id, DbColumnAttributes.id == attr_id))
+                    .one())
     except sqlalchemy.exc.NoResultFound:
         logging.error(sqlalchemy.exc.NoResultFound, exc_info=True)
 
@@ -127,7 +157,7 @@ def update_column(
         logging.error(AttributeError, exc_info=True)
 
 
-def delete_column(branch: Branch, column:DbColumn, *, session: Session) -> Commit:
+def delete_column(branch: Branch, column: DbColumn, *, session: Session) -> Commit:
     """Delete column from table from branch
 
     То есть надо удалить у колонки атрибуты, сам объект колонки останется

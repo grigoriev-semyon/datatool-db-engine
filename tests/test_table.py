@@ -75,7 +75,7 @@ def test_column_get():
     ucol, uattrs = get_column(ubranch, col_id, session=session)
 
     assert col_id == ucol.id
-    assert attrs_id != uattrs.id, "Commit in branch and in main are different"
+    assert attrs_id == uattrs.id, "Commit in branch and in main are different"
     assert attrs_column_id == uattrs.column_id
     assert attrs_name == uattrs.name
 
