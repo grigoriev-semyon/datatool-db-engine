@@ -134,15 +134,15 @@ def delete_table(
     try:
         if branch.type != BranchTypes.WIP:
             raise ProhibitedActionInBranch("Deleting table", branch.name)
-        s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()
         columns = session.query(DbColumn).filter(DbColumn.table_id == table.id).all()
+        for row in columns:
+            delete_column(branch, row, session=session)
         new_commit = Commit(attribute_id_in=table_and_last_attributes[1].id, attribute_id_out=None, branch_id=branch.id)
+        s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()
         if s:
             new_commit.prev_commit_id = s.id
         session.add(new_commit)
         session.flush()
-        for row in columns:
-            delete_column(branch, row, session=session)
         return new_commit
     except AttributeError:
         logging.error(AttributeError, exc_info=True)
