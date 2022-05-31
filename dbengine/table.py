@@ -5,10 +5,9 @@ import sqlalchemy.exc
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
+from .column import delete_column, create_column
 from .exceptions import ProhibitedActionInBranch, TableDoesntExists, TableDeleted
-from .models import Branch, Commit, DbTable, DbTableAttributes, BranchTypes, AttributeTypes, DbColumn, \
-    DbColumnAttributes
-from .column import delete_column, get_column, create_column
+from .models import Branch, Commit, DbTable, DbTableAttributes, BranchTypes, AttributeTypes, DbColumn
 
 logger = logging.getLogger(__name__)
 

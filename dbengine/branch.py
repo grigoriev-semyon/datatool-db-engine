@@ -1,10 +1,9 @@
 import logging
 
-import sqlalchemy.exc
 from sqlalchemy.orm import Session
 
-from .models import Branch, BranchTypes, Commit
 from .exceptions import IncorrectBranchType, BranchError
+from .models import Branch, BranchTypes, Commit
 
 logger = logging.getLogger(__name__)
 
