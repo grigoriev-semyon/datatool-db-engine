@@ -78,8 +78,6 @@ def get_table(branch: Branch, id: int, *, session: Session) -> Tuple[DbTable, Db
                                                                      or_(Commit.branch_id == 1,
                                                                          Commit.branch_id == branch.id))).one_or_none()
                 prev_commit = commit_in_branch.prev_commit_id
-
-
     except sqlalchemy.exc.NoResultFound:
         logging.error(sqlalchemy.exc.NoResultFound, exc_info=True)
 
