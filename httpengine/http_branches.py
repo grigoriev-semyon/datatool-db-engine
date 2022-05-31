@@ -1,9 +1,9 @@
 from fastapi import APIRouter
 from dbengine.branch import get_branch, request_merge_branch, unrequest_merge_branch, ok_branch, create_branch
-from . import Session
+from . import session
 
 branch_router = APIRouter(prefix="/branch")
-session = Session()
+
 
 
 @branch_router.get("/get/{branch_id}")
