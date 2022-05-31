@@ -5,6 +5,7 @@ from dbengine.branch import get_branch
 from . import session
 from dbengine.table import create_table, delete_table, update_table, get_table
 from dbengine.models import DbTable, DbTableAttributes, Commit
+from ..exceptions import TableDoesntExists
 
 table_router = APIRouter(prefix="/table")
 
@@ -41,5 +42,8 @@ async def http_get_tables_in_branch(branch_id: int):
     branch = get_branch(branch_id, session=session)
     result = []
     for row in table_ids:
-        result.append(get_table(branch, row.id, session=session))
+        try:
+            result.append(get_table(branch, row.id, session=session))
+        except TableDoesntExists:
+            pass
     return result

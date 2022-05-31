@@ -6,6 +6,7 @@ from dbengine.column import get_column, delete_column, update_column, create_col
 from dbengine.table import get_table
 from dbengine.branch import get_branch
 from dbengine.models import DbColumn, DbColumnAttributes, Commit
+from ..exceptions import ColumnDoesntExists
 
 column_router = APIRouter(prefix="/table/{table_id}/column")
 
@@ -45,5 +46,8 @@ async def http_get_columns_in_branch(branch_id: int, table_id: int):
     branch = get_branch(branch_id, session=session)
     result = []
     for row in column_ids:
-        result.append(get_column(branch, row.id, session=session))
+        try:
+            result.append(get_column(branch, row.id, session=session))
+        except ColumnDoesntExists:
+            pass
     return result
