@@ -82,8 +82,6 @@ def get_column(branch: Branch, id: int, *, session: Session) -> Tuple[DbColumn, 
                 prev_commit = commit_in_branch.prev_commit_id
     except sqlalchemy.exc.NoResultFound:
         logging.error(sqlalchemy.exc.NoResultFound, exc_info=True)
-    except sqlalchemy.exc.NoResultFound:
-        logging.error(sqlalchemy.exc.NoResultFound, exc_info=True)
 
 
 def update_column(
