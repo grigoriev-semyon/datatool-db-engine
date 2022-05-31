@@ -1,5 +1,5 @@
 import logging
-from typing import Tuple
+from typing import Tuple, Optional, List
 
 import sqlalchemy.exc
 from sqlalchemy import and_, or_
@@ -7,34 +7,33 @@ from sqlalchemy.orm import Session
 
 from .exceptions import ProhibitedActionInBranch, TableDoesntExists, TableDeleted
 from .models import Branch, Commit, DbTable, DbTableAttributes, BranchTypes, AttributeTypes, DbColumn
-from .column import delete_column, get_column
+from .column import delete_column, get_column, create_column
 
 logger = logging.getLogger(__name__)
 
 
-def create_table(branch: Branch, name: str, *, session: Session) -> Tuple[DbTable, DbTableAttributes, Commit]:
+def create_table(branch: Branch, name: str, columns: Optional[List[DbColumn]] = None, *, session: Session) -> Tuple[DbTable, DbTableAttributes, Commit]:
     """Create table in branch with optional columns"""
     logging.debug("create_table")
-    try:
-        if branch.type != BranchTypes.WIP:
-            raise ProhibitedActionInBranch("Table creating", branch.name)
-        s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()
-        new_commit = Commit(branch_id=branch.id, attribute_id_in=None)
-        if s:
-            new_commit.prev_commit_id = s.id
-        new_table = DbTable(type=AttributeTypes.TABLE)
-        session.add(new_table)
-        session.flush()
-        new_table_attribute = DbTableAttributes(type=AttributeTypes.TABLE, table_id=new_table.id, name=name)
-        session.add(new_table_attribute)
-        session.flush()
-        new_commit.attribute_id_out = new_table_attribute.id
-        session.add(new_commit)
-        session.flush()
-
-        return new_table, new_table_attribute, new_commit
-    except AttributeError:
-        logging.error(AttributeError, exc_info=True)
+    if branch.type != BranchTypes.WIP:
+        raise ProhibitedActionInBranch("Table creating", branch.name)
+    s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()
+    new_commit = Commit(branch_id=branch.id, attribute_id_in=None)
+    if s:
+        new_commit.prev_commit_id = s.id
+    new_table = DbTable(type=AttributeTypes.TABLE)
+    session.add(new_table)
+    session.flush()
+    new_table_attribute = DbTableAttributes(type=AttributeTypes.TABLE, table_id=new_table.id, name=name)
+    session.add(new_table_attribute)
+    session.flush()
+    new_commit.attribute_id_out = new_table_attribute.id
+    session.add(new_commit)
+    session.flush()
+    if columns:
+        for row in columns:
+            create_column(branch, new_table, name="", datatype="", session=session)
+    return new_table, new_table_attribute, new_commit
 
 
 def get_table(branch: Branch, id: int, *, session: Session) -> Tuple[DbTable, DbTableAttributes]:
@@ -92,34 +91,30 @@ def update_table(
     """Change name of table and commit to branch"""
     logging.debug("update_table")
     table_and_last_attributes = get_table(branch, table.id, session=session)
-    try:
-        if branch.type != BranchTypes.WIP:
-            raise ProhibitedActionInBranch("Table altering", branch.name)
-        s = (session.query(Commit).filter(
-            and_(Commit.branch_id == branch.id,
-                 Commit.attribute_id_out == table_and_last_attributes[1].id))).one_or_none()
-        s_main = session.query(Commit).filter(
-            and_(Commit.branch_id == 1, Commit.attribute_id_out == table_and_last_attributes[1].id)).one_or_none()
-        new_commit = Commit()
-        new_commit.branch_id = branch.id
-        if s:
-            new_commit.prev_commit_id = s.id
-        elif (not s) and s_main:
-            new_commit.prev_commit_id = s_main.id
-        elif not (s and s_main):
-            raise TableDoesntExists(table.id, branch.name)
-        new_commit.attribute_id_in = table_and_last_attributes[1].id
-        new_table_attribute = DbTableAttributes(type=AttributeTypes.TABLE, table_id=table_and_last_attributes[0].id,
-                                                name=name)
-        session.add(new_table_attribute)
-        session.flush()
-        new_commit.attribute_id_out = new_table_attribute.id
-        session.add(new_commit)
-        session.flush()
-
-        return table_and_last_attributes[0], new_table_attribute, new_commit
-    except AttributeError:
-        logging.error(AttributeError, exc_info=True)
+    if branch.type != BranchTypes.WIP:
+        raise ProhibitedActionInBranch("Table altering", branch.name)
+    s = (session.query(Commit).filter(
+        and_(Commit.branch_id == branch.id,
+             Commit.attribute_id_out == table_and_last_attributes[1].id))).one_or_none()
+    s_main = session.query(Commit).filter(
+        and_(Commit.branch_id == 1, Commit.attribute_id_out == table_and_last_attributes[1].id)).one_or_none()
+    new_commit = Commit()
+    new_commit.branch_id = branch.id
+    if s:
+        new_commit.prev_commit_id = s.id
+    elif (not s) and s_main:
+        new_commit.prev_commit_id = s_main.id
+    elif not (s and s_main):
+        raise TableDoesntExists(table.id, branch.name)
+    new_commit.attribute_id_in = table_and_last_attributes[1].id
+    new_table_attribute = DbTableAttributes(type=AttributeTypes.TABLE, table_id=table_and_last_attributes[0].id,
+                                            name=name)
+    session.add(new_table_attribute)
+    session.flush()
+    new_commit.attribute_id_out = new_table_attribute.id
+    session.add(new_commit)
+    session.flush()
+    return table_and_last_attributes[0], new_table_attribute, new_commit
 
 
 def delete_table(
@@ -131,18 +126,15 @@ def delete_table(
     """Delete table in branch"""
     logging.debug("delete_table")
     table_and_last_attributes = get_table(branch, table.id, session=session)
-    try:
-        if branch.type != BranchTypes.WIP:
-            raise ProhibitedActionInBranch("Deleting table", branch.name)
-        columns = session.query(DbColumn).filter(DbColumn.table_id == table.id).all()
-        for row in columns:
-            delete_column(branch, row, session=session)
-        new_commit = Commit(attribute_id_in=table_and_last_attributes[1].id, attribute_id_out=None, branch_id=branch.id)
-        s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()
-        if s:
-            new_commit.prev_commit_id = s.id
-        session.add(new_commit)
-        session.flush()
-        return new_commit
-    except AttributeError:
-        logging.error(AttributeError, exc_info=True)
+    if branch.type != BranchTypes.WIP:
+        raise ProhibitedActionInBranch("Deleting table", branch.name)
+    columns = session.query(DbColumn).filter(DbColumn.table_id == table.id).all()
+    for row in columns:
+        delete_column(branch, row, session=session)
+    new_commit = Commit(attribute_id_in=table_and_last_attributes[1].id, attribute_id_out=None, branch_id=branch.id)
+    s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()
+    if s:
+        new_commit.prev_commit_id = s.id
+    session.add(new_commit)
+    session.flush()
+    return new_commit
