@@ -13,8 +13,7 @@ def ddl():
     session: SessionType = Session()
     try:
         create_main_branch(session=session)
-        session.commit()
     except BranchError:
-        session.rollback()
+        pass
     finally:
         session.close()
