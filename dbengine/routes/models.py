@@ -16,10 +16,13 @@ class Commit(BaseModel):
 
 
 class Branch(BaseModel):
-    id: int = Field(..., alias="Branch id")
+    id: int = Field(..., title="Branch id")
     type: BranchTypes
     name: str
     create_ts: datetime
+
+    class Config:
+        orm_mode = True
 
 
 class DbTable(BaseModel):

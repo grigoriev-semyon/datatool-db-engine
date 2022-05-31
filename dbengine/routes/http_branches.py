@@ -1,17 +1,21 @@
+from datetime import datetime
+from typing import List
+
 from fastapi import APIRouter
 from fastapi.exceptions import HTTPException
 from fastapi_sqlalchemy import db
 from sqlalchemy.exc import NoResultFound
-from models import Branch
+
+import dbengine.models
+from dbengine.routes.models import Branch
 
 from dbengine.branch import create_branch, get_branch, ok_branch, request_merge_branch, unrequest_merge_branch
-from dbengine.models import Branch
 
 branch_router = APIRouter(prefix="/branch", tags=["Branch"])
 
 
 @branch_router.get("/{branch_id}", response_model=Branch)
-async def http_get_branch(branch_id: int) -> Branch:
+async def http_get_branch(branch_id: int):
     return get_branch(branch_id, session=db.session)
 
 
@@ -38,9 +42,9 @@ async def http_merge_branch(branch_id: int) -> Branch:
     return ok_branch(branch, session=db.session)
 
 
-@branch_router.get("", response_model=Branch)
+@branch_router.get("", response_model=List[Branch])
 async def http_get_all_branches():
-    return db.session.query(Branch).all()
+    return db.session.query(dbengine.models.Branch).all()
 
 
 @branch_router.post("", response_model=Branch)
@@ -53,9 +57,7 @@ async def patch_branch(branch_id: int, name: str):
     if branch_id == 1:
         raise HTTPException(status_code=403, detail="Forbidden")
     try:
-        return db.session.query(Branch).filter(Branch.id == branch_id).update({name: name}).returning(Branch.id,
-                                                                                                      Branch.name,
-                                                                                                      Branch.type,
-                                                                                                      Branch.create_ts)
+        return db.session.query(dbengine.models.Branch).filter(dbengine.models.Branch.id == branch_id).update(
+            {"name": name})
     except NoResultFound:
         raise HTTPException(status_code=404, detail="Not found")
