@@ -6,13 +6,15 @@ from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
 from .exceptions import ProhibitedActionInBranch, TableDoesntExists, TableDeleted
-from .models import Branch, Commit, DbTable, DbTableAttributes, BranchTypes, AttributeTypes, DbColumn
+from .models import Branch, Commit, DbTable, DbTableAttributes, BranchTypes, AttributeTypes, DbColumn, \
+    DbColumnAttributes
 from .column import delete_column, get_column, create_column
 
 logger = logging.getLogger(__name__)
 
 
-def create_table(branch: Branch, name: str, columns: Optional[List[DbColumn]] = None, *, session: Session) -> Tuple[DbTable, DbTableAttributes, Commit]:
+def create_table(branch: Branch, name: str, columns_and_attr: Optional[List[Tuple[str, str]]] = None, *,
+                 session: Session) -> Tuple[DbTable, DbTableAttributes, Commit]:
     """Create table in branch with optional columns"""
     logging.debug("create_table")
     if branch.type != BranchTypes.WIP:
@@ -30,9 +32,9 @@ def create_table(branch: Branch, name: str, columns: Optional[List[DbColumn]] = 
     new_commit.attribute_id_out = new_table_attribute.id
     session.add(new_commit)
     session.flush()
-    if columns:
-        for row in columns:
-            create_column(branch, new_table, name="", datatype="", session=session)
+    if columns_and_attr:
+        for row in columns_and_attr:
+            create_column(branch, new_table, name=row[0], datatype=row[1], session=session)
     return new_table, new_table_attribute, new_commit
 
 
