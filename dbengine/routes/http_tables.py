@@ -8,7 +8,7 @@ from dbengine.table import create_table, delete_table, update_table, get_table
 from dbengine.models import DbTable, DbTableAttributes, Commit
 from dbengine.exceptions import TableDoesntExists
 from dbengine.models import Commit, DbTable, DbTableAttributes
-from dbengine.table import create_table, delete_table, get_table, update_table
+from dbengine.table import create_table, delete_table, get_table, update_table, get_tables
 
 
 table_router = APIRouter(prefix="/table", tags=["Table"])
@@ -42,12 +42,12 @@ async def http_delete_table(branch_id: int, table_id: int) -> Commit:
 
 @table_router.get("")
 async def http_get_tables_in_branch(branch_id: int):
-    table_ids = db.session.query(DbTable).all()
     branch = get_branch(branch_id, session=db.session)
+    table_ids = get_tables(branch, session=db.session)
     result = []
     for row in table_ids:
         try:
-            result.append(get_table(branch, row.id, session=db.session))
+            result.append(get_table(branch, row, session=db.session))
         except TableDoesntExists:
             pass
     return result
