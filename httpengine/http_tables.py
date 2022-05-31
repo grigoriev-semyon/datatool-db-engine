@@ -1,7 +1,5 @@
 from fastapi import APIRouter
 
-from dbengine.models import Branch
-
 table_router = APIRouter(prefix="/table")
 
 
@@ -20,6 +18,6 @@ async def http_update_table(branch_id: int, table_id: int, name: str):
     pass
 
 
-@table_router.patch("/{branch_id}/delete/{table_id}")
+@table_router.delete("/{branch_id}/delete/{table_id}")
 async def http_delete_table(branch_id: int, table_id: int):
     pass
