@@ -39,7 +39,7 @@ def create_table(branch: Branch, name: str, columns_and_attr: Optional[List[Tupl
 
 
 def get_table(branch: Branch, id: int, *, session: Session) -> Tuple[DbTable, DbTableAttributes]:
-    """Return table and last attributes in branch by id or name"""
+    """Return table and last attributes in branch by id"""
     logging.debug("get_table")
     try:
         commit_in_branch = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(
