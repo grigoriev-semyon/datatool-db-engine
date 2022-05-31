@@ -16,27 +16,24 @@ def create_column(
 ) -> Tuple[DbColumn, DbColumnAttributes, Commit]:
     """Create column in table in branch"""
     logging.debug('create_column')
-    try:
-        if branch.type != BranchTypes.WIP:
-            raise ProhibitedActionInBranch("Column creating", branch.name)
-        s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()
-        new_commit = Commit(branch_id=branch.id, attribute_id_in=None)
-        if s:
-            new_commit.prev_commit_id = s.id
-        new_column = DbColumn(type=AttributeTypes.COLUMN, table_id=table.id)
-        session.add(new_column)
-        session.flush()
-        new_column_attribute = DbColumnAttributes(type=AttributeTypes.COLUMN, column_id=new_column.id,
-                                                  datatype=datatype, name=name)
-        session.add(new_column_attribute)
-        session.flush()
-        new_commit.attribute_id_out = new_column_attribute.id
-        session.add(new_commit)
-        session.flush()
+    if branch.type != BranchTypes.WIP:
+        raise ProhibitedActionInBranch("Column creating", branch.name)
+    s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()
+    new_commit = Commit(branch_id=branch.id, attribute_id_in=None)
+    if s:
+        new_commit.prev_commit_id = s.id
+    new_column = DbColumn(type=AttributeTypes.COLUMN, table_id=table.id)
+    session.add(new_column)
+    session.flush()
+    new_column_attribute = DbColumnAttributes(type=AttributeTypes.COLUMN, column_id=new_column.id,
+                                              datatype=datatype, name=name)
+    session.add(new_column_attribute)
+    session.flush()
+    new_commit.attribute_id_out = new_column_attribute.id
+    session.add(new_commit)
+    session.flush()
 
-        return new_column, new_column_attribute, new_commit
-    except AttributeError:
-        logging.error(AttributeError, exc_info=True)
+    return new_column, new_column_attribute, new_commit
 
 
 def get_column(branch: Branch, id: int, *, session: Session) -> Tuple[DbColumn, DbColumnAttributes]:
@@ -98,24 +95,20 @@ def update_column(
     """
     logging.debug('update_column')
     column_and_attributes = get_column(branch, column.id, session=session)
-    try:
-        if branch.type != BranchTypes.WIP:
-            raise ProhibitedActionInBranch("Column altering", branch.name)
-        s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()
-        new_commit = Commit(branch_id=branch.id, attribute_id_in=column_and_attributes[1].id)
-        if s:
-            new_commit.prev_commit_id = s.id
-        new_column_attribute = DbColumnAttributes(type=AttributeTypes.COLUMN, column_id=column_and_attributes[0].id,
-                                                  datatype=datatype, name=name)
-        session.add(new_column_attribute)
-        session.flush()
-        new_commit.attribute_id_out = new_column_attribute.id
-        session.add(new_commit)
-        session.flush()
-
-        return column_and_attributes[0], new_column_attribute, new_commit
-    except AttributeError:
-        logging.error(AttributeError, exc_info=True)
+    if branch.type != BranchTypes.WIP:
+        raise ProhibitedActionInBranch("Column altering", branch.name)
+    s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()
+    new_commit = Commit(branch_id=branch.id, attribute_id_in=column_and_attributes[1].id)
+    if s:
+        new_commit.prev_commit_id = s.id
+    new_column_attribute = DbColumnAttributes(type=AttributeTypes.COLUMN, column_id=column_and_attributes[0].id,
+                                              datatype=datatype, name=name)
+    session.add(new_column_attribute)
+    session.flush()
+    new_commit.attribute_id_out = new_column_attribute.id
+    session.add(new_commit)
+    session.flush()
+    return column_and_attributes[0], new_column_attribute, new_commit
 
 
 def delete_column(branch: Branch, column: DbColumn, *, session: Session) -> Commit:
@@ -126,16 +119,12 @@ def delete_column(branch: Branch, column: DbColumn, *, session: Session) -> Comm
     """
     logging.debug('delete_column')
     column_and_attributes = get_column(branch, column.id, session=session)
-    try:
-        if branch.type != BranchTypes.WIP:
-            raise ProhibitedActionInBranch("Column deleting", branch.name)
-        s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()
-        new_commit = Commit(branch_id=branch.id, attribute_id_in=column_and_attributes[1].id, attribute_id_out=None)
-        if s:
-            new_commit.prev_commit_id = s.id
-        session.add(new_commit)
-        session.flush()
-        return new_commit
-
-    except AttributeError:
-        logging.error(AttributeError, exc_info=True)
+    if branch.type != BranchTypes.WIP:
+        raise ProhibitedActionInBranch("Column deleting", branch.name)
+    s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()
+    new_commit = Commit(branch_id=branch.id, attribute_id_in=column_and_attributes[1].id, attribute_id_out=None)
+    if s:
+        new_commit.prev_commit_id = s.id
+    session.add(new_commit)
+    session.flush()
+    return new_commit
