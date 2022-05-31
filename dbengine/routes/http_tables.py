@@ -9,7 +9,7 @@ from dbengine.models import DbTable, DbTableAttributes, Commit
 table_router = APIRouter(prefix="/table")
 
 
-@table_router.post("/{table_name}")
+@table_router.post("/")
 async def http_create_table(branch_id: int, table_name: str) -> Tuple[DbTable, DbTableAttributes, Commit]:
     branch = get_branch(branch_id, session=session)
     return create_table(branch, table_name, session=session)
@@ -33,3 +33,13 @@ async def http_delete_table(branch_id: int, table_id: int) -> Commit:
     branch = get_branch(branch_id, session=session)
     table = get_table(branch, table_id, session=session)
     return delete_table(branch, table[0], session=session)
+
+
+@table_router.post("/")
+async def http_get_tables_in_branch(branch_id: int):
+    table_ids = session.query(DbTable).all()
+    branch = get_branch(branch_id, session=session)
+    result = []
+    for row in table_ids:
+        result.append(get_table(branch, row.id, session=session))
+    return result

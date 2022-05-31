@@ -37,3 +37,13 @@ async def http_delete_column(branch_id: int, column_id: int) -> Commit:
     branch = get_branch(branch_id, session=session)
     column = get_column(branch, column_id, session=session)
     return delete_column(branch, column[0], session=session)
+
+
+@column_router.post("/")
+async def http_get_columns_in_branch(branch_id: int, table_id: int):
+    column_ids = session.query(DbColumn).filter(DbColumn.table_id == table_id).all()
+    branch = get_branch(branch_id, session=session)
+    result = []
+    for row in column_ids:
+        result.append(get_column(branch, row.id, session=session))
+    return result
