@@ -1,7 +1,7 @@
 from fastapi import FastAPI
-from http_branches import branch_router
-from http_tables import table_router
-from http_columns import column_router
+from .http_branches import branch_router
+from .http_tables import table_router
+from .http_columns import column_router
 
 app = FastAPI()
 
