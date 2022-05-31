@@ -1,11 +1,10 @@
-import logging
-
 from fastapi import APIRouter
-from dbengine.branch import get_branch, request_merge_branch, unrequest_merge_branch, ok_branch, create_branch
-from . import session
-from dbengine.models import Branch
 from fastapi.exceptions import HTTPException
-from sqlalchemy.exc import SQLAlchemyError, NoResultFound, IntegrityError
+from sqlalchemy.exc import NoResultFound
+
+from dbengine.branch import get_branch, request_merge_branch, unrequest_merge_branch, ok_branch, create_branch
+from dbengine.models import Branch
+from . import session
 
 branch_router = APIRouter(prefix="/branch")
 
@@ -44,14 +43,8 @@ async def http_get_all_branches():
 
 
 @branch_router.post("/")
-async def http_create_branch(branch: Branch):
-    try:
-        session.add(branch)
-        session.flush()
-    except IntegrityError:
-        raise HTTPException(status_code=409, detail="Conflict")
-    except SQLAlchemyError:
-        raise HTTPException(status_code=400, detail="Bad request")
+async def http_create_branch():
+    return create_branch(name="default name", session=session)
 
 
 @branch_router.patch("/{branch_id}")

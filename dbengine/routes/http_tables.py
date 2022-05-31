@@ -35,7 +35,7 @@ async def http_delete_table(branch_id: int, table_id: int) -> Commit:
     return delete_table(branch, table[0], session=session)
 
 
-@table_router.post("/")
+@table_router.get("/")
 async def http_get_tables_in_branch(branch_id: int):
     table_ids = session.query(DbTable).all()
     branch = get_branch(branch_id, session=session)
