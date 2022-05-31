@@ -141,7 +141,10 @@ def delete_table(
     return new_commit
 
 
-def get_tables(branch: Branch, *, session: Session):
+def get_tables(branch: Branch, *, session: Session) -> List[int]:
+    """
+    Get list of table id's in branch
+    """
     try:
         ids = []
         commit_in_branch = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(

@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 
 import sqlalchemy.exc
 from sqlalchemy.orm import Session
@@ -130,7 +130,10 @@ def delete_column(branch: Branch, column: DbColumn, *, session: Session) -> Comm
     return new_commit
 
 
-def get_columns(branch: Branch, table: DbTable, session: Session):
+def get_columns(branch: Branch, table: DbTable, session: Session) -> List[int]:
+    """
+    Get a list of id columns in a table in this branch
+    """
     try:
         ids = []
         commit_in_branch = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(
