@@ -154,7 +154,7 @@ def get_tables(branch: Branch, *, session: Session):
             if (attr_out is not None and attr_in is not None) or (attr_out is not None and attr_in is None):
                 table = session.query(DbTableAttributes).filter(DbTableAttributes.id == attr_out).one_or_none()
                 if table:
-                    table_id = table.id
+                    table_id = table.table_id
                     if table_id not in ids:
                         ids.append(table_id)
             commit_in_branch = session.query(Commit).filter(Commit.id == prev_commit).one_or_none()

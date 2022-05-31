@@ -128,3 +128,26 @@ def delete_column(branch: Branch, column: DbColumn, *, session: Session) -> Comm
     session.add(new_commit)
     session.flush()
     return new_commit
+
+
+def get_columns(branch: Branch, table: DbTable, session: Session):
+    try:
+        ids = []
+        commit_in_branch = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(
+            Commit.id.desc()).first()
+        prev_commit = commit_in_branch.prev_commit_id
+        while True:
+            if not prev_commit:
+                return ids
+            attr_in, attr_out = commit_in_branch.attribute_id_in, commit_in_branch.attribute_id_out
+            if (attr_out is not None and attr_in is not None) or (attr_out is not None and attr_in is None):
+                column = session.query(DbColumnAttributes).filter(and_(DbColumnAttributes.id == attr_out)).one_or_none()
+                if column:
+                    column_id = column.column_id
+                    s = session.query(DbColumn).filter(DbColumn.id == column_id).one()
+                    if (column_id not in ids) and (s.table_id == table.id):
+                        ids.append(column_id)
+            commit_in_branch = session.query(Commit).filter(Commit.id == prev_commit).one_or_none()
+            prev_commit = commit_in_branch.prev_commit_id
+    except sqlalchemy.exc.NoResultFound:
+        logging.error(sqlalchemy.exc.NoResultFound, exc_info=True)
