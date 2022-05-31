@@ -50,6 +50,8 @@ async def http_create_branch():
 
 @branch_router.patch("/{branch_id}")
 async def patch_branch(branch_id: int, name: str):
+    if branch_id == 1:
+        raise HTTPException(status_code=403, detail="Forbidden")
     try:
         return db.session.query(Branch).filter(Branch.id == branch_id).update({name: name})
     except NoResultFound:
