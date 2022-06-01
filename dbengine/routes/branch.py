@@ -35,7 +35,7 @@ async def http_request_merge_branch(branch_id: int) -> Branch:
     return request_merge_branch(branch, session=db.session)
 
 
-@branch_router.delete("/{branch_id}/merge/unrequest", response_model=Branch)
+@branch_router.post("/{branch_id}/merge/unrequest", response_model=Branch)
 async def http_unreguest_merge_branch(branch_id: int) -> Branch:
     try:
         branch = get_branch(branch_id, session=db.session)
