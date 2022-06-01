@@ -1,5 +1,3 @@
-from typing import Tuple
-
 from dbengine.models.entity import DbTable, DbTableAttributes, DbColumnAttributes, DbColumn
 
 

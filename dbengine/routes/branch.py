@@ -3,8 +3,6 @@ from typing import List
 from fastapi import APIRouter
 from fastapi.exceptions import HTTPException
 from fastapi_sqlalchemy import db
-from sqlalchemy import update
-from sqlalchemy.exc import NoResultFound
 
 import dbengine.models
 from dbengine.exceptions import BranchError, BranchNotFoundError
