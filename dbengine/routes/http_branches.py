@@ -4,6 +4,7 @@ from typing import List
 from fastapi import APIRouter
 from fastapi.exceptions import HTTPException
 from fastapi_sqlalchemy import db
+from sqlalchemy import update
 from sqlalchemy.exc import NoResultFound
 
 import dbengine.models
@@ -52,12 +53,13 @@ async def http_create_branch():
     return create_branch(name="default name", session=db.session)
 
 
-@branch_router.patch("/{branch_id}")
+@branch_router.patch("/{branch_id}", response_model=Branch)
 async def patch_branch(branch_id: int, name: str):
     if branch_id == 1:
         raise HTTPException(status_code=403, detail="Forbidden")
     try:
-        return db.session.query(dbengine.models.Branch).filter(dbengine.models.Branch.id == branch_id).update(
-            {"name": name})
+        db.session.execute(
+            update(dbengine.models.Branch).where(dbengine.models.Branch.id == branch_id).values(name=name))
+        return db.session.query(dbengine.models.Branch).filter(dbengine.models.Branch.id == branch_id).one_or_none()
     except NoResultFound:
         raise HTTPException(status_code=404, detail="Not found")
