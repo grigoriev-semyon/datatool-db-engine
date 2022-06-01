@@ -8,6 +8,7 @@ from typing import Iterator, List
 from sqlalchemy import Column, DateTime
 from sqlalchemy import Enum as EnumDb
 from sqlalchemy import ForeignKey, Integer, String
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
 from .base import Base
@@ -30,9 +31,14 @@ class Branch(Base):
         "Commit", foreign_keys="Commit.branch_id", order_by="desc(Commit.create_ts)"
     )
 
-    @property
+    @hybrid_property
+    def last_commit(self) -> Commit:
+        return self._commits[0]
+
+    @hybrid_property
     def commits(self) -> Iterator[Commit]:
-        yield commit := self._commits[0]
+        commit = self.last_commit
+        yield commit
         while commit := commit.prev_commit:
             yield commit
 
