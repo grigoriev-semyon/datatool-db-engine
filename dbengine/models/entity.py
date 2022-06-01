@@ -1,24 +1,16 @@
-import re
 from datetime import datetime
 from enum import Enum
 
 from sqlalchemy import Column, DateTime
-from sqlalchemy import Enum as EnumDb
 from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import as_declarative, declared_attr
+
+from .base import Base
 
 
-@as_declarative()
-class Base:
-    """Base class for all database entities"""
-
-    @declared_attr
-    def __tablename__(cls) -> str:  # pylint: disable=no-self-argument
-        """Generate database table name automatically.
-        Convert CamelCase class name to snake_case db table name.
-        """
-        return re.sub(r"(?<!^)(?=[A-Z])", "_", cls.__name__).lower()
+class AttributeTypes(str, Enum):
+    TABLE = "TABLE"
+    COLUMN = "COLUMN"
 
 
 class DbEntity(Base):
@@ -32,7 +24,7 @@ class DbEntity(Base):
 class DbTable(DbEntity):
     id = Column(Integer, ForeignKey("db_entity.id"), primary_key=True)
 
-    __mapper_args__ = {"polymorphic_identity": "TABLE"}
+    __mapper_args__ = {"polymorphic_identity": AttributeTypes.TABLE}
     columns = relationship('DbColumn', back_populates='table', foreign_keys='DbColumn.table_id')
 
     def __repr__(self) -> str:
@@ -43,7 +35,7 @@ class DbColumn(DbEntity):
     id = Column(Integer, ForeignKey("db_entity.id"), primary_key=True)
     table_id = Column(Integer, ForeignKey("db_table.id"))
 
-    __mapper_args__ = {"polymorphic_identity": "COLUMN"}
+    __mapper_args__ = {"polymorphic_identity": AttributeTypes.COLUMN}
     table = relationship('DbTable', back_populates='columns', foreign_keys='DbColumn.table_id')
 
     def __repr__(self) -> str:
@@ -63,7 +55,7 @@ class DbTableAttributes(DbAttributes):
     table_id = Column(Integer, ForeignKey("db_table.id"))
     name = Column(String)
 
-    __mapper_args__ = {"polymorphic_identity": "TABLE"}
+    __mapper_args__ = {"polymorphic_identity": AttributeTypes.TABLE}
 
 
 class DbColumnAttributes(DbAttributes):
@@ -72,33 +64,4 @@ class DbColumnAttributes(DbAttributes):
     name = Column(String)
     datatype = Column(String)
 
-    __mapper_args__ = {"polymorphic_identity": "COLUMN"}
-
-
-class BranchTypes(str, Enum):
-    MAIN = "MAIN BRANCH"
-    WIP = "WORK IN PROGRESS"
-    MR = "MERGE REQUEST"
-    MERGED = "MERGED"
-
-
-class AttributeTypes(str, Enum):
-    TABLE = "TABLE"
-    COLUMN = "COLUMN"
-
-
-class Branch(Base):
-    id = Column(Integer, primary_key=True)
-    type = Column(EnumDb(BranchTypes, native_enum=False), default=BranchTypes.WIP)
-    name = Column(String)
-    create_ts = Column(DateTime, default=datetime.utcnow, nullable=False)
-
-
-class Commit(Base):
-    id = Column(Integer, primary_key=True)
-    prev_commit_id = Column(Integer, ForeignKey("commit.id"))
-    dev_branch_id = Column(Integer, ForeignKey("branch.id"), default=None)
-    branch_id = Column(Integer)
-    attribute_id_in = Column(Integer, ForeignKey("db_attributes.id"))
-    attribute_id_out = Column(Integer, ForeignKey("db_attributes.id"))
-    create_ts = Column(DateTime, default=datetime.utcnow, nullable=False)
+    __mapper_args__ = {"polymorphic_identity": AttributeTypes.COLUMN}

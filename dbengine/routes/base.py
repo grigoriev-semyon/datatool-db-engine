@@ -1,13 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_sqlalchemy import DBSessionMiddleware
-from sqlalchemy import create_engine
 
 from dbengine.settings import Settings
 
-from .http_branches import branch_router
-from .http_columns import column_router
-from .http_tables import table_router
+from .branch import branch_router
+from .column import column_router
+from .table import table_router
 
 
 settings = Settings()

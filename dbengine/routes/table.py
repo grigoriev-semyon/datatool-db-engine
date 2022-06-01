@@ -1,13 +1,11 @@
-from typing import Tuple, List
+from typing import List, Tuple
 
 from fastapi import APIRouter
 from fastapi_sqlalchemy import db
 
-from dbengine.branch import get_branch
-from dbengine.table import create_table, delete_table, update_table, get_table
-from dbengine.routes.models import DbTable, DbTableAttributes, Commit
 from dbengine.exceptions import TableDoesntExists
-from dbengine.table import create_table, delete_table, get_table, update_table, get_tables
+from dbengine.methods import create_table, delete_table, get_branch, get_table, get_tables, update_table
+from dbengine.routes.models import Commit, DbTable, DbTableAttributes
 
 
 table_router = APIRouter(prefix="/table", tags=["Table"])

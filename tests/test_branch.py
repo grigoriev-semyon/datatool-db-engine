@@ -1,6 +1,6 @@
 import pytest
 
-from dbengine import *
+from dbengine.methods import *
 from dbengine.exceptions import BranchError
 from dbengine.models import BranchTypes
 

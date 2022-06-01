@@ -2,8 +2,9 @@ import logging
 
 from sqlalchemy.orm import Session
 
-from .exceptions import IncorrectBranchType, BranchError
-from .models import Branch, BranchTypes, Commit
+from dbengine.exceptions import BranchError, IncorrectBranchType
+from dbengine.models import Branch, BranchTypes, Commit
+
 
 logger = logging.getLogger(__name__)
 
@@ -86,13 +87,18 @@ def ok_branch(branch: Branch, *, session: Session) -> Branch:
     session.flush()
     s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id).all()
     for row in s:
-        new_commit = Commit(dev_branch_id=branch.id, attribute_id_in=row.attribute_id_in,
-                            attribute_id_out=row.attribute_id_out, branch_id=1)
+        new_commit = Commit(
+            dev_branch_id=branch.id,
+            attribute_id_in=row.attribute_id_in,
+            attribute_id_out=row.attribute_id_out,
+            branch_id=1,
+        )
         if row == s[0]:
             new_commit.prev_commit_id = row.prev_commit_id
         else:
-            prev_commit = session.query(Commit).filter(Commit.dev_branch_id == branch.id).order_by(
-                Commit.id.desc()).first()
+            prev_commit = (
+                session.query(Commit).filter(Commit.dev_branch_id == branch.id).order_by(Commit.id.desc()).first()
+            )
             new_commit.prev_commit_id = prev_commit.id
         session.add(new_commit)
         session.flush()

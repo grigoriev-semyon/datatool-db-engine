@@ -1,6 +1,6 @@
 import pytest
 
-from dbengine import *
+from dbengine.methods import *
 from dbengine.exceptions import TableDoesntExists, ColumnDoesntExists, ColumnDeleted, TableDeleted
 from . import Session
 

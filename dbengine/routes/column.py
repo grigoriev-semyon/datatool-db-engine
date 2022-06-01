@@ -3,11 +3,9 @@ from typing import Tuple
 from fastapi import APIRouter
 from fastapi_sqlalchemy import db
 
-from dbengine.branch import get_branch
-from dbengine.column import create_column, delete_column, get_column, update_column
 from dbengine.exceptions import ColumnDoesntExists
+from dbengine.methods import create_column, delete_column, get_branch, get_column, get_table, update_column
 from dbengine.models import Commit, DbColumn, DbColumnAttributes
-from dbengine.table import get_table
 
 
 column_router = APIRouter(prefix="/table/{table_id}/column", tags=["Column"])
