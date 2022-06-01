@@ -56,6 +56,7 @@ class DbTableAttributes(DbAttributes):
     name = Column(String)
 
     __mapper_args__ = {"polymorphic_identity": AttributeTypes.TABLE}
+    table: DbTable = relationship('DbTable', foreign_keys=[table_id])
 
 
 class DbColumnAttributes(DbAttributes):
@@ -65,3 +66,4 @@ class DbColumnAttributes(DbAttributes):
     datatype = Column(String)
 
     __mapper_args__ = {"polymorphic_identity": AttributeTypes.COLUMN}
+    column: DbColumn = relationship('DbColumn', foreign_keys=[column_id])
