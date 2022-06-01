@@ -15,6 +15,12 @@ class IncorrectBranchType(BranchError):
         super().__init__(message)
 
 
+class BranchNotFoundError(BranchError):
+    def __init__(self, branch_id: int):
+        message = f"Branch with id {branch_id} not found"
+        super().__init__(message)
+
+
 class TableError(Exception):
     def __init__(self, message="Table error occurred"):
         super().__init__(message)

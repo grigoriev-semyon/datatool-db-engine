@@ -1,6 +1,6 @@
 import pytest
 
-from dbengine import *
+from dbengine.methods import *
 from dbengine.exceptions import TableDoesntExists, ColumnDoesntExists, ColumnDeleted, TableDeleted
 from . import Session
 
@@ -22,6 +22,9 @@ def test_create():
     assert col_1.table_id == table.id
     assert commit_1.attribute_id_in is None
     assert commit_1.attribute_id_out == col_attr_1.id
+
+    assert tab_attr.table == table
+    assert col_attr_1.column == col_1
 
 
 def test_table_get():

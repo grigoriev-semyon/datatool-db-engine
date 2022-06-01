@@ -1,8 +1,8 @@
 import pytest
 
-from dbengine import create_main_branch
+from dbengine.methods import create_main_branch
 from dbengine.exceptions import BranchError
-from dbengine.models import Base
+from dbengine.models.base import Base
 
 from . import engine, Session, SessionType
 
@@ -13,8 +13,7 @@ def ddl():
     session: SessionType = Session()
     try:
         create_main_branch(session=session)
-        session.commit()
     except BranchError:
-        session.rollback()
+        pass
     finally:
         session.close()
