@@ -30,7 +30,13 @@ async def http_get_table(branch_id: int, table_id: int):
         branch = get_branch(branch_id, session=db.session)
     except BranchError:
         raise HTTPException(status_code=404, detail="Branch not found")
-    return table_aggregator(get_table(branch, table_id, session=db.session))
+    try:
+        table = get_table(branch, table_id, session=db.session)
+        return table_aggregator(table[0], table[1])
+    except TableDoesntExists as e1:
+        raise HTTPException(status_code=404, detail=e1)
+    except TableDeleted as e2:
+        raise HTTPException(status_code=410, detail=e2)
 
 
 @table_router.patch("/{table_id}", response_model=Table)
