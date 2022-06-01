@@ -20,7 +20,7 @@ async def http_create_table(branch_id: int, table_name: str):
     try:
         result = create_table(branch, table_name, session=db.session)
     except ProhibitedActionInBranch as e:
-        raise HTTPException(status_code=410, detail=e)
+        raise HTTPException(status_code=403, detail="Forbidden")
     return table_aggregator(result[0], result[1])
 
 
@@ -33,10 +33,10 @@ async def http_get_table(branch_id: int, table_id: int):
     try:
         table = get_table(branch, table_id, session=db.session)
         return table_aggregator(table[0], table[1])
-    except TableDoesntExists as e1:
-        raise HTTPException(status_code=404, detail=e1)
-    except TableDeleted as e2:
-        raise HTTPException(status_code=410, detail=e2)
+    except TableDoesntExists as e:
+        raise HTTPException(status_code=404, detail=e)
+    except TableDeleted as e:
+        raise HTTPException(status_code=410, detail=e)
 
 
 @table_router.patch("/{table_id}", response_model=Table)
@@ -47,18 +47,18 @@ async def http_update_table(branch_id: int, table_id: int, name: str):
         raise HTTPException(status_code=404, detail="Branch not found")
     try:
         table = get_table(branch, table_id, session=db.session)
-    except TableDoesntExists as e1:
-        raise HTTPException(status_code=404, detail=e1)
-    except TableDeleted as e2:
-        raise HTTPException(status_code=410, detail=e2)
+    except TableDoesntExists as e:
+        raise HTTPException(status_code=404, detail=e)
+    except TableDeleted as e:
+        raise HTTPException(status_code=410, detail=e)
     try:
         result = update_table(branch, table[0], name, session=db.session)
     except ProhibitedActionInBranch as e:
-        raise HTTPException(status_code=410, detail=e)
+        raise HTTPException(status_code=403, detail="Forbidden")
     return table_aggregator(result[0], result[1])
 
 
-@table_router.delete("/{table_id}", response_model=str)
+@table_router.delete("/{table_id}")
 async def http_delete_table(branch_id: int, table_id: int):
     try:
         branch = get_branch(branch_id, session=db.session)
@@ -66,15 +66,14 @@ async def http_delete_table(branch_id: int, table_id: int):
         raise HTTPException(status_code=404, detail="Branch not found")
     try:
         table = get_table(branch, table_id, session=db.session)
-    except TableDoesntExists as e1:
-        raise HTTPException(status_code=404, detail=e1)
-    except TableDeleted as e2:
-        raise HTTPException(status_code=410, detail=e2)
+    except TableDoesntExists as e:
+        raise HTTPException(status_code=404, detail=e)
+    except TableDeleted:
+        raise HTTPException(status_code=403, detail="Forbidden")
     try:
         delete_table(branch, table[0], session=db.session)
     except ProhibitedActionInBranch as e:
         raise HTTPException(status_code=410, detail=e)
-    return "Table deleted"
 
 
 @table_router.get("", response_model=List[Table])

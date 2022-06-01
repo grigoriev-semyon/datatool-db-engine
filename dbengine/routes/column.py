@@ -55,11 +55,11 @@ async def http_update_column(
     try:
         result = update_column(branch, column[0], name=name, datatype=datatype, session=db.session)
     except ProhibitedActionInBranch as e:
-        raise HTTPException(status_code=410, detail=e)
+        raise HTTPException(status_code=403, detail="Forbidden")
     return column_aggregator(result[0], result[1])
 
 
-@column_router.delete("/{column_id}", response_model=str)
+@column_router.delete("/{column_id}")
 async def http_delete_column(branch_id: int, column_id: int):
     try:
         branch = get_branch(branch_id, session=db.session)
@@ -69,8 +69,7 @@ async def http_delete_column(branch_id: int, column_id: int):
     try:
         delete_column(branch, column[0], session=db.session)
     except ProhibitedActionInBranch as e:
-        raise HTTPException(status_code=410, detail=e)
-    return "Table deleted"
+        raise HTTPException(status_code=403, detail="Forbidden")
 
 
 @column_router.get("", response_model=List[Column])
