@@ -30,7 +30,7 @@ async def http_create_column(
     try:
         result = create_column(branch, table[0], name=name, datatype=datatype, session=db.session)
     except ProhibitedActionInBranch as e:
-        raise HTTPException(status_code=410, detail=e)
+        raise HTTPException(status_code=403, detail=e)
     return column_aggregator(result[0], result[1])
 
 

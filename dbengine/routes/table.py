@@ -73,7 +73,7 @@ async def http_delete_table(branch_id: int, table_id: int):
     try:
         delete_table(branch, table[0], session=db.session)
     except ProhibitedActionInBranch as e:
-        raise HTTPException(status_code=410, detail=e)
+        raise HTTPException(status_code=403, detail=e)
 
 
 @table_router.get("", response_model=List[Table])
