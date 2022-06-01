@@ -1,8 +1,10 @@
+from typing import List
 import pytest
 
 from dbengine.methods import *
 from dbengine.exceptions import BranchError
 from dbengine.models import BranchTypes
+from dbengine.models.branch import Commit
 
 from . import Session
 
@@ -64,3 +66,10 @@ def test_commit_iteration():
 
     # First commit in branch is empty commit
     assert commit1.prev_commit.prev_commit.branch.type == BranchTypes.MAIN
+
+    log: List[Commit] = list(branch.commits)
+    # At least 1 commit from main, then empty commit and 2 commits from branch
+    assert len(log) >= 4
+    assert log[0] == commit2
+    assert log[1] == commit1
+    assert log[3].branch.type == BranchTypes.MAIN

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import logging
 from datetime import datetime
 from enum import Enum
-from typing import List
+from typing import Iterator, List
 
 from sqlalchemy import Column, DateTime
 from sqlalchemy import Enum as EnumDb
@@ -25,6 +26,16 @@ class Branch(Base):
     name = Column(String)
     create_ts = Column(DateTime, default=datetime.utcnow, nullable=False)
 
+    _commits: List[Commit] = relationship(
+        "Commit", foreign_keys="Commit.branch_id", order_by="desc(Commit.create_ts)"
+    )
+
+    @property
+    def commits(self) -> Iterator[Commit]:
+        yield commit := self._commits[0]
+        while commit := commit.prev_commit:
+            yield commit
+
     def __repr__(self):
         return f"<Branch id={self.id} type={self.type}>"
 
@@ -41,7 +52,7 @@ class Commit(Base):
     next_commit: List[Commit]
     prev_commit: Commit = relationship("Commit", foreign_keys=[prev_commit_id], backref="next_commit", remote_side=id)
 
-    branch: Branch = relationship("Branch", foreign_keys=[branch_id])
+    branch: Branch = relationship("Branch", foreign_keys=[branch_id], back_populates="_commits")
 
     def __repr__(self):
         return f"<Commit id={self.id} branch_id={self.branch_id}>"
