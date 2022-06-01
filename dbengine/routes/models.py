@@ -11,16 +11,6 @@ class MyModel(BaseModel):
         orm_mode = True
 
 
-class Commit(MyModel):
-    id: int = Field(...)
-    prev_commit_id: Union[int, None]
-    dev_branch_id: Union[int, None]
-    branch_id: int
-    attribute_id_in: Union[int, None]
-    attribute_id_out: Union[int, None]
-    create_ts: datetime
-
-
 class Branch(MyModel):
     id: int = Field(..., title="Branch id")
     type: BranchTypes
@@ -28,23 +18,13 @@ class Branch(MyModel):
     create_ts: datetime
 
 
-class DbTable(MyModel):
-    id: int = Field(..., )
-
-
-class DbColumn(MyModel):
+class Table(MyModel):
     id: int = Field(...)
-    table_id: int = Field(...)
-
-
-class DbTableAttributes(MyModel):
-    id: int = Field(...)
-    table_id: int = Field(...)
     name: str
 
 
-class DbColumnAttributes(MyModel):
+class Column(MyModel):
     id: int = Field(...)
-    column_id: int = Field(...)
+    table_id: int = Field(...)
     name: str
     datatype: str
