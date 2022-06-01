@@ -7,8 +7,9 @@ from sqlalchemy import update
 from sqlalchemy.exc import NoResultFound
 
 import dbengine.models
-from dbengine.exceptions import BranchError
+from dbengine.exceptions import BranchError, BranchNotFoundError
 from dbengine.methods import create_branch, get_branch, ok_branch, request_merge_branch, unrequest_merge_branch
+from dbengine.models import BranchTypes
 from dbengine.routes.models import Branch
 
 branch_router = APIRouter(prefix="/branch", tags=["Branch"])
@@ -18,7 +19,7 @@ branch_router = APIRouter(prefix="/branch", tags=["Branch"])
 async def http_get_branch(branch_id: int):
     try:
         return get_branch(branch_id, session=db.session)
-    except BranchError:
+    except BranchNotFoundError:
         raise HTTPException(status_code=404, detail="Branch not found")
 
 
@@ -31,7 +32,7 @@ async def http_create_branch_by_name(branch_name: str) -> Branch:
 async def http_request_merge_branch(branch_id: int) -> Branch:
     try:
         branch = get_branch(branch_id, session=db.session)
-    except BranchError:
+    except BranchNotFoundError:
         raise HTTPException(status_code=404, detail="Branch not found")
     return request_merge_branch(branch, session=db.session)
 
@@ -40,7 +41,7 @@ async def http_request_merge_branch(branch_id: int) -> Branch:
 async def http_unreguest_merge_branch(branch_id: int) -> Branch:
     try:
         branch = get_branch(branch_id, session=db.session)
-    except BranchError:
+    except BranchNotFoundError:
         raise HTTPException(status_code=404, detail="Branch not found")
     return unrequest_merge_branch(branch, session=db.session)
 
@@ -49,7 +50,7 @@ async def http_unreguest_merge_branch(branch_id: int) -> Branch:
 async def http_merge_branch(branch_id: int) -> Branch:
     try:
         branch = get_branch(branch_id, session=db.session)
-    except BranchError:
+    except BranchNotFoundError:
         raise HTTPException(status_code=404, detail="Branch not found")
     return ok_branch(branch, session=db.session)
 
@@ -69,12 +70,10 @@ async def http_create_branch():
 
 @branch_router.patch("/{branch_id}", response_model=Branch)
 async def patch_branch(branch_id: int, name: str):
-    if branch_id == 1:
-        raise HTTPException(status_code=403, detail="Forbidden")
-    try:
-        db.session.execute(
-            update(dbengine.models.Branch).where(dbengine.models.Branch.id == branch_id).values(name=name)
-        )
-        return db.session.query(dbengine.models.Branch).filter(dbengine.models.Branch.id == branch_id).one_or_none()
-    except NoResultFound:
-        raise HTTPException(status_code=404, detail="Not found")
+    branch = db.session.query(dbengine.models.Branch).get(branch_id)
+    if not branch:
+        raise HTTPException(status_code=404)
+    if branch.type == BranchTypes.MAIN:
+        raise HTTPException(status_code=403)
+    branch.name = name
+    db.session.flush()

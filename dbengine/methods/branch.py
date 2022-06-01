@@ -2,7 +2,7 @@ import logging
 
 from sqlalchemy.orm import Session
 
-from dbengine.exceptions import BranchError, IncorrectBranchType
+from dbengine.exceptions import BranchError, IncorrectBranchType, BranchNotFoundError
 from dbengine.models import Branch, BranchTypes, Commit
 
 
@@ -114,4 +114,4 @@ def get_branch(id: int, *, session: Session) -> Branch:
     if result:
         return result
     else:
-        raise BranchError
+        raise BranchNotFoundError(id)
