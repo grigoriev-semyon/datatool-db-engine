@@ -1,15 +1,15 @@
-from typing import Tuple, List
+from typing import List
 
 from fastapi import APIRouter
-from fastapi_sqlalchemy import db
 from fastapi.exceptions import HTTPException
+from fastapi_sqlalchemy import db
 
-import dbengine.models
-from dbengine.exceptions import ColumnDoesntExists
+from dbengine.exceptions import BranchError, TableDoesntExists, TableDeleted, \
+    ProhibitedActionInBranch
 from dbengine.methods import create_column, delete_column, get_branch, get_column, get_table, update_column
-from dbengine.methods.column import get_columns
-from dbengine.routes.models import Table, Column
 from dbengine.methods.aggregators import column_aggregator
+from dbengine.methods.column import get_columns
+from dbengine.routes.models import Column
 
 column_router = APIRouter(prefix="/table/{table_id}/column", tags=["Column"])
 
@@ -17,15 +17,29 @@ column_router = APIRouter(prefix="/table/{table_id}/column", tags=["Column"])
 @column_router.post("", response_model=Column)
 async def http_create_column(
         branch_id: int, table_id: int, name: str, datatype: str):
-    branch = get_branch(branch_id, session=db.session)
-    table = get_table(branch, table_id, session=db.session)
-    result = create_column(branch, table[0], name=name, datatype=datatype, session=db.session)
+    try:
+        branch = get_branch(branch_id, session=db.session)
+    except BranchError:
+        raise HTTPException(status_code=404, detail="Branch not found")
+    try:
+        table = get_table(branch, table_id, session=db.session)
+    except TableDoesntExists as e1:
+        raise HTTPException(status_code=404, detail=e1)
+    except TableDeleted as e2:
+        raise HTTPException(status_code=410, detail=e2)
+    try:
+        result = create_column(branch, table[0], name=name, datatype=datatype, session=db.session)
+    except ProhibitedActionInBranch as e:
+        raise HTTPException(status_code=410, detail=e)
     return column_aggregator((result[0], result[1]))
 
 
 @column_router.get("/{column_id}", response_model=Column)
 async def http_get_column(branch_id: int, column_id: int):
-    branch = get_branch(branch_id, session=db.session)
+    try:
+        branch = get_branch(branch_id, session=db.session)
+    except BranchError:
+        raise HTTPException(status_code=404, detail="Branch not found")
     result = get_column(branch, column_id, session=db.session)
     return column_aggregator(result)
 
@@ -33,24 +47,44 @@ async def http_get_column(branch_id: int, column_id: int):
 @column_router.patch("/{column_id}", response_model=Column)
 async def http_update_column(
         branch_id: int, column_id: int, name: str, datatype: str):
-    branch = get_branch(branch_id, session=db.session)
+    try:
+        branch = get_branch(branch_id, session=db.session)
+    except BranchError:
+        raise HTTPException(status_code=404, detail="Branch not found")
     column = get_column(branch, column_id, session=db.session)
-    result = update_column(branch, column[0], name=name, datatype=datatype, session=db.session)
+    try:
+        result = update_column(branch, column[0], name=name, datatype=datatype, session=db.session)
+    except ProhibitedActionInBranch as e:
+        raise HTTPException(status_code=410, detail=e)
     return column_aggregator((result[0], result[1]))
 
 
 @column_router.delete("/{column_id}", response_model=str)
 async def http_delete_column(branch_id: int, column_id: int):
-    branch = get_branch(branch_id, session=db.session)
+    try:
+        branch = get_branch(branch_id, session=db.session)
+    except BranchError:
+        raise HTTPException(status_code=404, detail="Branch not found")
     column = get_column(branch, column_id, session=db.session)
-    delete_column(branch, column[0], session=db.session)
+    try:
+        delete_column(branch, column[0], session=db.session)
+    except ProhibitedActionInBranch as e:
+        raise HTTPException(status_code=410, detail=e)
     return "Table deleted"
 
 
 @column_router.get("", response_model=List[Column])
 async def http_get_columns_in_branch(branch_id: int, table_id: int):
-    branch = get_branch(branch_id, session=db.session)
-    table = get_table(branch, table_id, session=db.session)[0]
+    try:
+        branch = get_branch(branch_id, session=db.session)
+    except BranchError:
+        raise HTTPException(status_code=404, detail="Branch not found")
+    try:
+        table = get_table(branch, table_id, session=db.session)[0]
+    except TableDoesntExists as e1:
+        raise HTTPException(status_code=404, detail=e1)
+    except TableDeleted as e2:
+        raise HTTPException(status_code=410, detail=e2)
     column_ids = get_columns(branch, table, session=db.session)
     result = []
     for row in column_ids:

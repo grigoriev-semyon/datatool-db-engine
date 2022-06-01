@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import List
 
 from fastapi import APIRouter
@@ -8,16 +7,19 @@ from sqlalchemy import update
 from sqlalchemy.exc import NoResultFound
 
 import dbengine.models
-from dbengine.routes.models import Branch
-
+from dbengine.exceptions import BranchError
 from dbengine.methods import create_branch, get_branch, ok_branch, request_merge_branch, unrequest_merge_branch
+from dbengine.routes.models import Branch
 
 branch_router = APIRouter(prefix="/branch", tags=["Branch"])
 
 
 @branch_router.get("/{branch_id}", response_model=Branch)
 async def http_get_branch(branch_id: int):
-    return get_branch(branch_id, session=db.session)
+    try:
+        return get_branch(branch_id, session=db.session)
+    except BranchError:
+        raise HTTPException(status_code=404, detail="Branch not found")
 
 
 @branch_router.post("/{branch_name}", response_model=Branch)
@@ -27,19 +29,28 @@ async def http_create_branch_by_name(branch_name: str) -> Branch:
 
 @branch_router.post("/{branch_id}/merge/request", response_model=Branch)
 async def http_request_merge_branch(branch_id: int) -> Branch:
-    branch = get_branch(branch_id, session=db.session)
+    try:
+        branch = get_branch(branch_id, session=db.session)
+    except BranchError:
+        raise HTTPException(status_code=404, detail="Branch not found")
     return request_merge_branch(branch, session=db.session)
 
 
 @branch_router.delete("/{branch_id}/merge/unrequest", response_model=Branch)
 async def http_unreguest_merge_branch(branch_id: int) -> Branch:
-    branch = get_branch(branch_id, session=db.session)
+    try:
+        branch = get_branch(branch_id, session=db.session)
+    except BranchError:
+        raise HTTPException(status_code=404, detail="Branch not found")
     return unrequest_merge_branch(branch, session=db.session)
 
 
 @branch_router.post("/{branch_id}/merge/approve", response_model=Branch)
 async def http_merge_branch(branch_id: int) -> Branch:
-    branch = get_branch(branch_id, session=db.session)
+    try:
+        branch = get_branch(branch_id, session=db.session)
+    except BranchError:
+        raise HTTPException(status_code=404, detail="Branch not found")
     return ok_branch(branch, session=db.session)
 
 
@@ -50,7 +61,10 @@ async def http_get_all_branches():
 
 @branch_router.post("", response_model=Branch)
 async def http_create_branch():
-    return create_branch(name="default name", session=db.session)
+    try:
+        return create_branch(name="default name", session=db.session)
+    except BranchError as e:
+        raise HTTPException(status_code=403, detail=e)
 
 
 @branch_router.patch("/{branch_id}", response_model=Branch)

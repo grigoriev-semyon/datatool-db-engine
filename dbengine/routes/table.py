@@ -1,49 +1,82 @@
-from typing import List, Tuple
+from typing import List
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from fastapi_sqlalchemy import db
 
-from dbengine.exceptions import TableDoesntExists
+from dbengine.exceptions import TableDoesntExists, TableDeleted, BranchError, ProhibitedActionInBranch
 from dbengine.methods import create_table, delete_table, get_branch, get_table, get_tables, update_table
-from dbengine.routes.models import Table
 from dbengine.methods.aggregators import table_aggregator
-
+from dbengine.routes.models import Table
 
 table_router = APIRouter(prefix="/table", tags=["Table"])
 
 
 @table_router.post("", response_model=Table)
 async def http_create_table(branch_id: int, table_name: str):
-    branch = get_branch(branch_id, session=db.session)
-    result = create_table(branch, table_name, session=db.session)
+    try:
+        branch = get_branch(branch_id, session=db.session)
+    except BranchError:
+        raise HTTPException(status_code=404, detail="Branch not found")
+    try:
+        result = create_table(branch, table_name, session=db.session)
+    except ProhibitedActionInBranch as e:
+        raise HTTPException(status_code=410, detail=e)
     return table_aggregator((result[0], result[1]))
 
 
 @table_router.get("/{table_id}", response_model=Table)
 async def http_get_table(branch_id: int, table_id: int):
-    branch = get_branch(branch_id, session=db.session)
+    try:
+        branch = get_branch(branch_id, session=db.session)
+    except BranchError:
+        raise HTTPException(status_code=404, detail="Branch not found")
     return table_aggregator(get_table(branch, table_id, session=db.session))
 
 
 @table_router.patch("/{table_id}", response_model=Table)
 async def http_update_table(branch_id: int, table_id: int, name: str):
-    branch = get_branch(branch_id, session=db.session)
-    table = get_table(branch, table_id, session=db.session)
-    result = update_table(branch, table[0], name, session=db.session)
+    try:
+        branch = get_branch(branch_id, session=db.session)
+    except BranchError:
+        raise HTTPException(status_code=404, detail="Branch not found")
+    try:
+        table = get_table(branch, table_id, session=db.session)
+    except TableDoesntExists as e1:
+        raise HTTPException(status_code=404, detail=e1)
+    except TableDeleted as e2:
+        raise HTTPException(status_code=410, detail=e2)
+    try:
+        result = update_table(branch, table[0], name, session=db.session)
+    except ProhibitedActionInBranch as e:
+        raise HTTPException(status_code=410, detail=e)
     return table_aggregator((result[0], result[1]))
 
 
 @table_router.delete("/{table_id}", response_model=str)
 async def http_delete_table(branch_id: int, table_id: int):
-    branch = get_branch(branch_id, session=db.session)
-    table = get_table(branch, table_id, session=db.session)
-    delete_table(branch, table[0], session=db.session)
+    try:
+        branch = get_branch(branch_id, session=db.session)
+    except BranchError:
+        raise HTTPException(status_code=404, detail="Branch not found")
+    try:
+        table = get_table(branch, table_id, session=db.session)
+    except TableDoesntExists as e1:
+        raise HTTPException(status_code=404, detail=e1)
+    except TableDeleted as e2:
+        raise HTTPException(status_code=410, detail=e2)
+    try:
+        delete_table(branch, table[0], session=db.session)
+    except ProhibitedActionInBranch as e:
+        raise HTTPException(status_code=410, detail=e)
     return "Table deleted"
 
 
 @table_router.get("", response_model=List[Table])
 async def http_get_tables_in_branch(branch_id: int):
-    branch = get_branch(branch_id, session=db.session)
+    try:
+        branch = get_branch(branch_id, session=db.session)
+    except BranchError:
+        raise HTTPException(status_code=404, detail="Branch not found")
     table_ids = get_tables(branch, session=db.session)
     result = []
     for row in table_ids:

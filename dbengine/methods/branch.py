@@ -110,4 +110,8 @@ def ok_branch(branch: Branch, *, session: Session) -> Branch:
 def get_branch(id: int, *, session: Session) -> Branch:
     """Return branch by id or name"""
     logger.debug("get_branch")
-    return session.query(Branch).get(id)
+    result = session.query(Branch).get(id)
+    if result:
+        return result
+    else:
+        raise BranchError
