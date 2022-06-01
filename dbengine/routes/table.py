@@ -87,5 +87,5 @@ async def http_get_tables_in_branch(branch_id: int):
     result = []
     for row in table_ids:
         table = get_table(branch, row, session=db.session)
-        result.append(table_aggregator(result[0], result[1]))
+        result.append(table_aggregator(table[0], table[1]))
     return result
