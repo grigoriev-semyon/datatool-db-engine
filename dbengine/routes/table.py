@@ -21,7 +21,7 @@ async def http_create_table(branch_id: int, table_name: str):
         result = create_table(branch, table_name, session=db.session)
     except ProhibitedActionInBranch as e:
         raise HTTPException(status_code=410, detail=e)
-    return table_aggregator((result[0], result[1]))
+    return table_aggregator(result[0], result[1])
 
 
 @table_router.get("/{table_id}", response_model=Table)
@@ -49,7 +49,7 @@ async def http_update_table(branch_id: int, table_id: int, name: str):
         result = update_table(branch, table[0], name, session=db.session)
     except ProhibitedActionInBranch as e:
         raise HTTPException(status_code=410, detail=e)
-    return table_aggregator((result[0], result[1]))
+    return table_aggregator(result[0], result[1])
 
 
 @table_router.delete("/{table_id}", response_model=str)
@@ -81,5 +81,5 @@ async def http_get_tables_in_branch(branch_id: int):
     result = []
     for row in table_ids:
         table = get_table(branch, row, session=db.session)
-        result.append(table_aggregator(table))
+        result.append(table_aggregator(result[0], result[1]))
     return result

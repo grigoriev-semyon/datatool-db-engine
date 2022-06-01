@@ -3,17 +3,17 @@ from typing import Tuple
 from dbengine.models.entity import DbTable, DbTableAttributes, DbColumnAttributes, DbColumn
 
 
-def table_aggregator(table_and_attr: Tuple[DbTable, DbTableAttributes]):
+def table_aggregator(table: DbTable, attr: DbTableAttributes):
     return {
-        "id": table_and_attr[0].id,
-        "name": table_and_attr[1].name
+        "id": table.id,
+        "name": attr.name
     }
 
 
-def column_aggregator(column_and_attr: Tuple[DbColumn, DbColumnAttributes]):
+def column_aggregator(column: DbColumn, attr: DbColumnAttributes):
     return {
-        "id": column_and_attr[0].id,
-        "table_id": column_and_attr[0].table_id,
-        "name": column_and_attr[1].name,
-        "datatype": column_and_attr[1].datatype
+        "id": column.id,
+        "table_id": column.table_id,
+        "name": attr.name,
+        "datatype": attr.datatype
     }

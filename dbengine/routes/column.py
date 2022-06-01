@@ -31,7 +31,7 @@ async def http_create_column(
         result = create_column(branch, table[0], name=name, datatype=datatype, session=db.session)
     except ProhibitedActionInBranch as e:
         raise HTTPException(status_code=410, detail=e)
-    return column_aggregator((result[0], result[1]))
+    return column_aggregator(result[0], result[1])
 
 
 @column_router.get("/{column_id}", response_model=Column)
@@ -41,7 +41,7 @@ async def http_get_column(branch_id: int, column_id: int):
     except BranchError:
         raise HTTPException(status_code=404, detail="Branch not found")
     result = get_column(branch, column_id, session=db.session)
-    return column_aggregator(result)
+    return column_aggregator(result[0], result[1])
 
 
 @column_router.patch("/{column_id}", response_model=Column)
@@ -56,7 +56,7 @@ async def http_update_column(
         result = update_column(branch, column[0], name=name, datatype=datatype, session=db.session)
     except ProhibitedActionInBranch as e:
         raise HTTPException(status_code=410, detail=e)
-    return column_aggregator((result[0], result[1]))
+    return column_aggregator(result[0], result[1])
 
 
 @column_router.delete("/{column_id}", response_model=str)
@@ -89,5 +89,5 @@ async def http_get_columns_in_branch(branch_id: int, table_id: int):
     result = []
     for row in column_ids:
         column = get_column(branch, row, session=db.session)
-        result.append(column_aggregator((column[0], column[1])))
+        result.append(column_aggregator(column[0], column[1]))
     return result
