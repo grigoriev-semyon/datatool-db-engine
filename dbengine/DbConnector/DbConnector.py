@@ -6,6 +6,7 @@ from sqlalchemy.engine import Engine, create_engine
 from pydantic import AnyUrl
 from dbengine.settings import Settings
 from sqlalchemy.exc import SQLAlchemyError
+from dbengine.models.branch import Branch
 
 
 class IDbConnector(metaclass=ABCMeta):
@@ -17,11 +18,12 @@ class IDbConnector(metaclass=ABCMeta):
         """Connect to DB and create self._connection Engine`"""
         try:
             self._connection = create_engine(self._settings.DWH_CONNECTION_TEST, echo = True)
+            self._connection.connect()
         except SQLAlchemyError:
             logging.error(SQLAlchemyError, exc_info=True)
 
     @abstractmethod
-    def generate_migration(self, attribute_in, attribute_out) -> Tuple[str, str]:
+    def generate_migration(self, branch: Branch) -> Tuple[str, str]:
         """
         Generates SQL Code for migration any DataBase
         """
@@ -38,7 +40,7 @@ class PostgreConnector(IDbConnector):
     def _connect(self, url: AnyUrl):
         super()._connect(url)
 
-    def generate_migration(self, attribute_in, attribute_out) -> Tuple[str, str]:
+    def generate_migration(self, branch: Branch) -> Tuple[str, str]:
         pass
 
     def execute(self, sql: str):
@@ -52,7 +54,7 @@ class MySqlConnector(IDbConnector):
     def _connect(self, url: AnyUrl):
         super()._connect(url)
 
-    def generate_migration(self, attribute_in, attribute_out) -> Tuple[str, str]:
+    def generate_migration(self, branch: Brancht) -> Tuple[str, str]:
         pass
 
     def execute(self, sql: str):
