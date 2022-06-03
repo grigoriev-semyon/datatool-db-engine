@@ -54,7 +54,7 @@ class MySqlConnector(IDbConnector):
     def _connect(self, url: AnyUrl):
         super()._connect(url)
 
-    def generate_migration(self, branch: Brancht) -> Tuple[str, str]:
+    def generate_migration(self, branch: Branch) -> Tuple[str, str]:
         pass
 
     def execute(self, sql: str):
