@@ -21,6 +21,12 @@ class BranchNotFoundError(BranchError):
         super().__init__(message)
 
 
+class BranchConflict(BranchError):
+    def __init__(self, branch_id: int):
+        message = f"Branch {branch_id} conflicts with main branch"
+        super().__init__(message)
+
+
 class TableError(Exception):
     def __init__(self, message="Table error occurred"):
         super().__init__(message)

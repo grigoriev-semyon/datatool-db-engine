@@ -2,8 +2,10 @@ import logging
 
 from sqlalchemy.orm import Session
 
-from dbengine.exceptions import BranchError, IncorrectBranchType, BranchNotFoundError
+from dbengine.exceptions import BranchError, IncorrectBranchType, BranchNotFoundError, BranchConflict
 from dbengine.models import Branch, BranchTypes, Commit
+from dbengine.methods.table import get_tables, get_table
+from dbengine.methods.column import get_columns, get_column
 
 logger = logging.getLogger(__name__)
 
@@ -113,3 +115,32 @@ def get_branch(id: int, *, session: Session) -> Branch:
     if not result:
         raise BranchNotFoundError(id)
     return result
+
+
+def get_all_tables_and_columns_in_branch(branch: Branch, session: Session):
+    table_ids = get_tables(branch, session=session)
+    tables = []
+    columns = []
+    for tablerow in table_ids:
+        table = get_table(branch, tablerow, session=session)
+        tables.append(table)
+        column_ids = get_columns(branch, table[0], session=session)
+        for columnrow in column_ids:
+            column = get_column(branch, columnrow, session=session)
+            columns.append(column)
+    return tables, columns
+
+
+def check_conflicts(branch: Branch, session: Session):
+    tables, columns = get_all_tables_and_columns_in_branch(branch, session=session)
+    for row in tables:
+        table_id = row[0].id
+        main_table = get_table(get_branch(1, session=session), table_id, session=session)
+        if main_table[1].create_ts > branch.create_ts:
+            raise BranchConflict(branch.id)
+    for row in columns:
+        column_id = row[0].id
+        main_column = get_column(get_branch(1, session=session), column_id, session=session)
+        if main_column[1].create_ts > branch.create_ts:
+            raise BranchConflict(branch.id)
+    return True
