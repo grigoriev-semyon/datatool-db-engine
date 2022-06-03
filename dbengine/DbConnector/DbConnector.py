@@ -13,11 +13,10 @@ class IDbConnector(metaclass=ABCMeta):
     _settings: Settings = Settings()
     _connection: Engine = None
 
-    @abstractmethod
-    def _connect(self, url: AnyUrl):
+    def _connect(self):
         """Connect to DB and create self._connection Engine`"""
         try:
-            self._connection = create_engine(self._settings.DWH_CONNECTION_TEST, echo = True)
+            self._connection = create_engine(self._settings.DWH_CONNECTION_TEST, echo=True)
             self._connection.connect()
         except SQLAlchemyError:
             logging.error(SQLAlchemyError, exc_info=True)
@@ -37,9 +36,6 @@ class PostgreConnector(IDbConnector):
     _connection: Engine = super()._connection
     _settings: Settings = super()._settings
 
-    def _connect(self, url: AnyUrl):
-        super()._connect(url)
-
     def generate_migration(self, branch: Branch) -> Tuple[str, str]:
         pass
 
@@ -50,9 +46,6 @@ class PostgreConnector(IDbConnector):
 class MySqlConnector(IDbConnector):
     _connection: Engine = super()._connection
     _settings: Settings = super()._settings
-
-    def _connect(self, url: AnyUrl):
-        super()._connect(url)
 
     def generate_migration(self, branch: Branch) -> Tuple[str, str]:
         pass
