@@ -1,9 +1,11 @@
+import logging
 from abc import ABCMeta, abstractmethod
 from typing import Tuple
 
 from sqlalchemy.engine import Engine, create_engine
 from pydantic import AnyUrl
 from dbengine.settings import Settings
+from sqlalchemy.exc import SQLAlchemyError
 
 
 class IDbConnector(metaclass=ABCMeta):
@@ -13,6 +15,10 @@ class IDbConnector(metaclass=ABCMeta):
     @abstractmethod
     def _connect(self, url: AnyUrl):
         """Connect to DB and create self._connection Engine`"""
+        try:
+            self._connection = create_engine(self._settings.DWH_CONNECTION_TEST, echo = True)
+        except SQLAlchemyError:
+            logging.error(SQLAlchemyError, exc_info=True)
 
     @abstractmethod
     def generate_migration(self, attribute_in, attribute_out) -> Tuple[str, str]:
@@ -30,8 +36,7 @@ class PostgreConnector(IDbConnector):
     _settings: Settings = super()._settings
 
     def _connect(self, url: AnyUrl):
-        if self._settings.DWH_CONNECTION_TEST.scheme == 'postgresql':
-            self._connection = create_engine(self._settings.DWH_CONNECTION_TEST, echo=True)
+        super()._connect(url)
 
     def generate_migration(self, attribute_in, attribute_out) -> Tuple[str, str]:
         pass
@@ -45,7 +50,7 @@ class MySqlConnector(IDbConnector):
     _settings: Settings = super()._settings
 
     def _connect(self, url: AnyUrl):
-        pass
+        super()._connect(url)
 
     def generate_migration(self, attribute_in, attribute_out) -> Tuple[str, str]:
         pass
