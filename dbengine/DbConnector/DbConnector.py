@@ -1,18 +1,15 @@
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import Tuple, List
 
 from sqlalchemy.engine import Engine, create_engine
-from pydantic import AnyUrl
+from sqlalchemy.exc import SQLAlchemyError, DBAPIError
 from sqlalchemy.orm import Session
 
-from dbengine.methods import get_table, get_column
-from dbengine.settings import Settings
-from sqlalchemy.exc import SQLAlchemyError, DBAPIError
-from dbengine.models.branch import Branch, Commit, CommitActionTypes
-from dbengine.models.entity import AttributeTypes
 from dbengine.methods.branch import get_action_of_commit, get_type_of_commit_object, get_names_table_in_commit, \
     get_names_column_in_commit
+from dbengine.models.branch import Branch, Commit, CommitActionTypes
+from dbengine.models.entity import AttributeTypes
+from dbengine.settings import Settings
 
 
 class IDbConnector(metaclass=ABCMeta):
