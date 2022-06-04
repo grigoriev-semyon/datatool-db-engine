@@ -3,7 +3,7 @@ from abc import ABCMeta, abstractmethod
 
 from sqlalchemy.engine import Engine, create_engine
 from sqlalchemy.exc import SQLAlchemyError, DBAPIError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
 
 from dbengine.methods.branch import get_action_of_commit, get_type_of_commit_object, get_names_table_in_commit, \
     get_names_column_in_commit
@@ -14,19 +14,25 @@ from dbengine.settings import Settings
 
 class IDbConnector(metaclass=ABCMeta):
     _settings: Settings = Settings()
+    _connection_db_dsn: Engine = None
     _connection_test: Engine = None
     _connection_prod: Engine = None
-    _session: Session
+    _session = None
+    _Session = None
 
-    def _connect(self):
+    def connect(self):
         """Connect to DB and create self._connection Engine`"""
         try:
             self._connection_test = create_engine(self._settings.DWH_CONNECTION_TEST, echo=True)
             self._connection_prod = create_engine(self._settings.DWH_CONNECTION_PROD, echo=True)
-            self._connection_test.connect()
-            self._connection_prod.connect()
+            self._connection_db_dsn = create_engine(self._settings.DB_DSN, echo=True)
+            self._Session = sessionmaker(self._connection_db_dsn)
+            self._session = self._Session()
         except SQLAlchemyError:
             logging.error(SQLAlchemyError, exc_info=True)
+
+    def get_session(self):
+        return self._session
 
     @staticmethod
     @abstractmethod
@@ -63,7 +69,7 @@ class IDbConnector(metaclass=ABCMeta):
         Generates SQL Code for migration any DataBase
         """
         code = []
-        s = self._session.query(Commit).filter(Commit.branch_id == branch.id).all()
+        s = branch.commits
         for row in s:
             object_type = get_type_of_commit_object(row, session=self._session)
             action_type = get_action_of_commit(row)
@@ -102,18 +108,15 @@ class IDbConnector(metaclass=ABCMeta):
         except DBAPIError:
             pass
             ##откат
-        try:
-            for row in code:
-                self._connection_prod.execute(row)
-        except DBAPIError:
-            pass
-            ##откат
+        # try:
+        #     for row in code:
+        #         self._connection_prod.execute(row)
+        # except DBAPIError:
+        #     pass
+        #     ##откат
 
 
 class PostgreConnector(IDbConnector):
-    _connection: Engine = super()._connection
-    _settings: Settings = super()._settings
-
     @staticmethod
     def _create_table(tablename: str):
         return f"CREATE TABLE {tablename};"
@@ -140,8 +143,3 @@ class PostgreConnector(IDbConnector):
         return f"{'ALTER TABLE'}' {tablename} RENAME COLUMN {new_name} TO {tmp_columnname};" \
                f"ALTER TABLE {tablename} ADD {new_name} AS ({tmp_columnname} as {new_datatype})" \
                f"ALTER TABLE {tablename} DROP COLUMN {tmp_columnname};"
-
-    def execute(self, branch: Branch):
-        code = self._generate_migration(branch)
-        for row in code:
-            self._connection.execute(row)

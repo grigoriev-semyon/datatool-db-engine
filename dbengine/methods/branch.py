@@ -192,12 +192,13 @@ def get_names_column_in_commit(commit: Commit, session: Session):
     datatype2 = None
     if get_type_of_commit_object(commit, session=session) == AttributeTypes.COLUMN:
         if attr_in is not None:
-            s = session.query(DbColumnAttributes).filter(DbColumnAttributes.id == attr_in).one().name
+            s = session.query(DbColumnAttributes).filter(DbColumnAttributes.id == attr_in).one()
             name1 = s.name
             column_id = s.column_id
             datatype1 = s.datatype
-            find_table_id = session.query(DbColumn).filter(DbColumn.id == column_id).table_id
-            tablename = session.query(DbTableAttributes).filter(DbTableAttributes.table_id == find_table_id).name
+            find_table_id = session.query(DbColumn).filter(DbColumn.id == column_id).one_or_none().table_id
+            tablename = session.query(DbTableAttributes).filter(
+                DbTableAttributes.table_id == find_table_id).one_or_none().table_id
         elif attr_out is not None:
             name2 = session.query(DbColumnAttributes).filter(DbColumnAttributes.id == attr_out).one().name
             datatype2 = session.query(DbColumnAttributes).filter(DbColumnAttributes.id == attr_in).one().datatype
