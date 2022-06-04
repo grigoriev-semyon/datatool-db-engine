@@ -1,6 +1,6 @@
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import Tuple
+from typing import Tuple, List
 
 from sqlalchemy.engine import Engine, create_engine
 from pydantic import AnyUrl
@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from dbengine.methods import get_table, get_column
 from dbengine.settings import Settings
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, DBAPIError
 from dbengine.models.branch import Branch, Commit, CommitActionTypes
 from dbengine.models.entity import AttributeTypes
 from dbengine.methods.branch import get_action_of_commit, get_type_of_commit_object, get_names_table_in_commit, \
@@ -17,14 +17,17 @@ from dbengine.methods.branch import get_action_of_commit, get_type_of_commit_obj
 
 class IDbConnector(metaclass=ABCMeta):
     _settings: Settings = Settings()
-    _connection: Engine = None
+    _connection_test: Engine = None
+    _connection_prod: Engine = None
     _session: Session
 
     def _connect(self):
         """Connect to DB and create self._connection Engine`"""
         try:
-            self._connection = create_engine(self._settings.DWH_CONNECTION_TEST, echo=True)
-            self._connection.connect()
+            self._connection_test = create_engine(self._settings.DWH_CONNECTION_TEST, echo=True)
+            self._connection_prod = create_engine(self._settings.DWH_CONNECTION_PROD, echo=True)
+            self._connection_test.connect()
+            self._connection_prod.connect()
         except SQLAlchemyError:
             logging.error(SQLAlchemyError, exc_info=True)
 
@@ -58,7 +61,7 @@ class IDbConnector(metaclass=ABCMeta):
     def _alter_column(tablename: str, columnname: str, new_name: str, datatype: str, new_datatype: str):
         pass
 
-    def generate_migration(self, branch: Branch):
+    def _generate_migration(self, branch: Branch):
         """
         Generates SQL Code for migration any DataBase
         """
@@ -78,24 +81,36 @@ class IDbConnector(metaclass=ABCMeta):
                 tablename, name1, datatype1, name2, datatype2 = get_names_column_in_commit(row, session=self._session)
             if object_type == AttributeTypes.TABLE:
                 if action_type == CommitActionTypes.CREATE and name1 is None and name2 is not None:
-                    self._create_table(name2)
+                    code.append(self._create_table(name2))
                 elif action_type == CommitActionTypes.ALTER and name1 is not None and name2 is not None:
-                    self._alter_table(name1, name2)
+                    code.append(self._alter_table(name1, name2))
                 elif action_type == CommitActionTypes.DROP and name1 is not None and name2 is None:
-                    self._delete_table(name1)
+                    code.append(self._delete_table(name1))
             elif object_type == AttributeTypes.COLUMN:
                 if action_type == CommitActionTypes.CREATE and name1 is None and datatype1 is None and name2 is not None and datatype2 is not None and tablename is not None:
-                    self._create_column(tablename, name2, datatype2)
+                    code.append(self._create_column(tablename, name2, datatype2))
                 if action_type == CommitActionTypes.ALTER and name1 is not None and datatype1 is not None and name2 is not None and datatype2 is not None and tablename is not None:
-                    self._alter_column(tablename, name1, name2, datatype1, datatype2)
+                    code.append(self._alter_column(tablename, name1, name2, datatype1, datatype2))
                 if action_type == CommitActionTypes.DROP and name1 is not None and name2 is None and datatype1 is not None and datatype2 is None and tablename is not None:
-                    self._delete_column(tablename, name1)
+                    code.append(self._delete_column(tablename, name1))
 
         return code
 
-    @abstractmethod
-    def execute(self, sql: str):
+    def execute(self, branch: Branch):
         """Execute Sql code"""
+        code = self._generate_migration(branch)
+        try:
+            for row in code:
+                self._connection_test.execute(row)
+        except DBAPIError:
+            pass
+            ##откат
+        try:
+            for row in code:
+                self._connection_prod.execute(row)
+        except DBAPIError:
+            pass
+            ##откат
 
 
 class PostgreConnector(IDbConnector):
@@ -129,5 +144,7 @@ class PostgreConnector(IDbConnector):
                f"ALTER TABLE {tablename} ADD {new_name} AS ({tmp_columnname} as {new_datatype})" \
                f"ALTER TABLE {tablename} DROP COLUMN {tmp_columnname};"
 
-    def execute(self, sql: str):
-        pass
+    def execute(self, branch: Branch):
+        code = self._generate_migration(branch)
+        for row in code:
+            self._connection.execute(row)
