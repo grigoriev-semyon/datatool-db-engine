@@ -3,9 +3,10 @@ import logging
 from sqlalchemy.orm import Session
 
 from dbengine.exceptions import BranchError, IncorrectBranchType, BranchNotFoundError, BranchConflict
-from dbengine.models import Branch, BranchTypes, Commit
+from dbengine.models import Branch, BranchTypes, Commit, DbAttributes
 from dbengine.methods.table import get_tables, get_table
 from dbengine.methods.column import get_columns, get_column
+from dbengine.models.branch import CommitActionTypes
 
 logger = logging.getLogger(__name__)
 
@@ -144,3 +145,27 @@ def check_conflicts(branch: Branch, session: Session):
         if main_column[1].create_ts > branch.create_ts:
             raise BranchConflict(branch.id)
     return True
+
+
+def get_type_of_commit_object(commit: Commit, session: Session):
+    attr_in, attr_out = commit.attribute_id_in, commit.attribute_id_out
+    if attr_in is not None:
+        s = session.query(DbAttributes).filter(DbAttributes.id == attr_in).one_or_none()
+        return s.type
+    elif attr_out is not None:
+        s = session.query(DbAttributes).filter(DbAttributes.id == attr_out).one_or_none()
+        return s.type
+    else:
+        return None
+
+
+def get_action_of_commit(commit: Commit):
+    attr_in, attr_out = commit.attribute_id_in, commit.attribute_id_out
+    if attr_in is not None and attr_out is not None:
+        return CommitActionTypes.ALTER
+    elif attr_in is not None and attr_out is None:
+        return CommitActionTypes.DROP
+    elif attr_in is None and attr_out is not None:
+        return CommitActionTypes.CREATE
+
+

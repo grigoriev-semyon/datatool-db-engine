@@ -20,6 +20,12 @@ class BranchTypes(str, Enum):
     MERGED = "MERGED"
 
 
+class CommitActionTypes(str, Enum):
+    ALTER = "ALTER"
+    DROP = "DROP"
+    CREATE = "CREATE"
+
+
 class Branch(Base):
     id = Column(Integer, primary_key=True)
     type = Column(EnumDb(BranchTypes, native_enum=False), default=BranchTypes.WIP)
