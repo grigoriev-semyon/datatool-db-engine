@@ -109,23 +109,23 @@ class PostgreConnector(IDbConnector):
 
     @staticmethod
     def _create_table(tablename: str):
-        pass
+        return f"CREATE TABLE {tablename};"
 
     @staticmethod
     def _create_column(tablename: str, columnname: str, columntype: str):
-        pass
+        return f'{"ALTER TABLE"} {tablename} ADD COLUMN {columnname} {columntype};'
 
     @staticmethod
     def _delete_column(tablename: str, columnname: str):
-        pass
+        return f"{'ALTER TABLE'} {tablename} DROP COLUMN {columnname};"
 
     @staticmethod
     def _delete_table(tablename: str):
-        pass
+        return f"{'DROP TABLE'} {tablename};"
 
     @staticmethod
     def _alter_table(tablename: str, new_tablename: str):
-        pass
+        return f"ALTER TABLE {tablename} RENAME TO {new_tablename};"
 
     @staticmethod
     def _alter_column(tablename: str, columnname: str, new_name: str, datatype: str, new_datatype: str):
