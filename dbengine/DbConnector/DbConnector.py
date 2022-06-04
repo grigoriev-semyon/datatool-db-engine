@@ -58,11 +58,6 @@ class IDbConnector(metaclass=ABCMeta):
     def _alter_column(tablename: str, columnname: str, new_name: str, datatype: str, new_datatype: str):
         pass
 
-    @staticmethod
-    @abstractmethod
-    def _alter_datatype(tablename: str, columnname: str, new_type: str):
-        pass
-
     def generate_migration(self, branch: Branch):
         """
         Generates SQL Code for migration any DataBase
@@ -125,15 +120,14 @@ class PostgreConnector(IDbConnector):
 
     @staticmethod
     def _alter_table(tablename: str, new_tablename: str):
-        return f"ALTER TABLE {tablename} RENAME TO {new_tablename};"
+        return f"{'ALTER TABLE'} {tablename} RENAME TO {new_tablename};"
 
     @staticmethod
     def _alter_column(tablename: str, columnname: str, new_name: str, datatype: str, new_datatype: str):
-        pass
-
-    @staticmethod
-    def _alter_datatype(tablename: str, columnname: str, new_type: str):
-        pass
+        tmp_columnname = f"tmp_{columnname}"
+        return f"{'ALTER TABLE'}' {tablename} RENAME COLUMN {new_name} TO {tmp_columnname};" \
+               f"ALTER TABLE {tablename} ADD {new_name} AS ({tmp_columnname} as {new_datatype})" \
+               f"ALTER TABLE {tablename} DROP COLUMN {tmp_columnname};"
 
     def execute(self, sql: str):
         pass
