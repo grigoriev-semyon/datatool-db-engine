@@ -62,8 +62,8 @@ class DbTableAttributes(DbAttributes):
 class DbColumnAttributes(DbAttributes):
     id = Column(Integer, ForeignKey("db_attributes.id"), primary_key=True)
     column_id = Column(Integer, ForeignKey("db_column.id"))
-    name = Column(String)
-    datatype = Column(String)
+    name = Column(String, nullable=False)
+    datatype = Column(String, nullable=False)
 
     __mapper_args__ = {"polymorphic_identity": AttributeTypes.COLUMN}
     column: DbColumn = relationship('DbColumn', foreign_keys=[column_id])

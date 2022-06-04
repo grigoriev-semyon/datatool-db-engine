@@ -6,11 +6,13 @@ from sqlalchemy.engine import Engine, create_engine
 from pydantic import AnyUrl
 from sqlalchemy.orm import Session
 
+from dbengine.methods import get_table, get_column
 from dbengine.settings import Settings
 from sqlalchemy.exc import SQLAlchemyError
 from dbengine.models.branch import Branch, Commit, CommitActionTypes
 from dbengine.models.entity import AttributeTypes
-from dbengine.methods.branch import get_action_of_commit, get_type_of_commit_object
+from dbengine.methods.branch import get_action_of_commit, get_type_of_commit_object, get_names_table_in_commit, \
+    get_names_column_in_commit
 
 
 class IDbConnector(metaclass=ABCMeta):
@@ -48,12 +50,12 @@ class IDbConnector(metaclass=ABCMeta):
 
     @staticmethod
     @abstractmethod
-    def _alter_table(tablename: str):
+    def _alter_table(tablename: str, new_tablename: str):
         pass
 
     @staticmethod
     @abstractmethod
-    def _alter_column(tablename: str, columnname: str, new_name: str):
+    def _alter_column(tablename: str, columnname: str, new_name: str, datatype: str, new_datatype: str):
         pass
 
     @staticmethod
@@ -70,20 +72,29 @@ class IDbConnector(metaclass=ABCMeta):
         for row in s:
             object_type = get_type_of_commit_object(row, session=self._session)
             action_type = get_action_of_commit(row)
+            name1 = None
+            name2 = None
+            datatype1 = None
+            datatype2 = None
+            tablename = None
             if object_type == AttributeTypes.TABLE:
-                if action_type == CommitActionTypes.CREATE:
-                    pass
-                elif action_type == CommitActionTypes.ALTER:
-                    pass
-                elif action_type == CommitActionTypes.DROP:
-                    pass
+                name1, name2 = get_names_table_in_commit(row, session=self._session)
             elif object_type == AttributeTypes.COLUMN:
-                if action_type == CommitActionTypes.CREATE:
-                    pass
-                if action_type == CommitActionTypes.ALTER:
-                    pass
-                if action_type == CommitActionTypes.DROP:
-                    pass
+                tablename, name1, datatype1, name2, datatype2 = get_names_column_in_commit(row, session=self._session)
+            if object_type == AttributeTypes.TABLE:
+                if action_type == CommitActionTypes.CREATE and name1 is None and name2 is not None:
+                    self._create_table(name2)
+                elif action_type == CommitActionTypes.ALTER and name1 is not None and name2 is not None:
+                    self._alter_table(name1, name2)
+                elif action_type == CommitActionTypes.DROP and name1 is not None and name2 is None:
+                    self._delete_table(name1)
+            elif object_type == AttributeTypes.COLUMN:
+                if action_type == CommitActionTypes.CREATE and name1 is None and datatype1 is None and name2 is not None and datatype2 is not None and tablename is not None:
+                    self._create_column(tablename, name2, datatype2)
+                if action_type == CommitActionTypes.ALTER and name1 is not None and datatype1 is not None and name2 is not None and datatype2 is not None and tablename is not None:
+                    self._alter_column(tablename, name1, name2, datatype1, datatype2)
+                if action_type == CommitActionTypes.DROP and name1 is not None and name2 is None and datatype1 is not None and datatype2 is None and tablename is not None:
+                    self._delete_column(tablename, name1)
 
         return code
 
@@ -96,18 +107,32 @@ class PostgreConnector(IDbConnector):
     _connection: Engine = super()._connection
     _settings: Settings = super()._settings
 
-    def generate_migration(self, branch: Branch) -> Tuple[str, str]:
+    @staticmethod
+    def _create_table(tablename: str):
         pass
 
-    def execute(self, sql: str):
+    @staticmethod
+    def _create_column(tablename: str, columnname: str, columntype: str):
         pass
 
+    @staticmethod
+    def _delete_column(tablename: str, columnname: str):
+        pass
 
-class MySqlConnector(IDbConnector):
-    _connection: Engine = super()._connection
-    _settings: Settings = super()._settings
+    @staticmethod
+    def _delete_table(tablename: str):
+        pass
 
-    def generate_migration(self, branch: Branch) -> Tuple[str, str]:
+    @staticmethod
+    def _alter_table(tablename: str, new_tablename: str):
+        pass
+
+    @staticmethod
+    def _alter_column(tablename: str, columnname: str, new_name: str, datatype: str, new_datatype: str):
+        pass
+
+    @staticmethod
+    def _alter_datatype(tablename: str, columnname: str, new_type: str):
         pass
 
     def execute(self, sql: str):

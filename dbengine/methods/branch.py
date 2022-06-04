@@ -1,10 +1,12 @@
 import logging
+from typing import Tuple
 
 from sqlalchemy.orm import Session
 
 from dbengine.exceptions import BranchError, IncorrectBranchType, BranchNotFoundError, BranchConflict
-from dbengine.models import Branch, BranchTypes, Commit, DbAttributes
+from dbengine.models import Branch, BranchTypes, Commit, DbAttributes, DbTableAttributes
 from dbengine.methods.table import get_tables, get_table
+from dbengine.models.entity import AttributeTypes, DbColumnAttributes, DbColumn
 from dbengine.methods.column import get_columns, get_column
 from dbengine.models.branch import CommitActionTypes
 
@@ -169,3 +171,34 @@ def get_action_of_commit(commit: Commit):
         return CommitActionTypes.CREATE
 
 
+def get_names_table_in_commit(commit: Commit, session: Session):
+    attr_in, attr_out = commit.attribute_id_in, commit.attribute_id_out
+    name1 = None
+    name2 = None
+    if get_type_of_commit_object(commit, session=session) == AttributeTypes.TABLE:
+        if attr_in is not None:
+            name1 = session.query(DbTableAttributes).filter(DbTableAttributes.id == attr_in).one().name
+        elif attr_out is not None:
+            name2 = session.query(DbTableAttributes).filter(DbTableAttributes.id == attr_out).one().name
+    return name1, name2
+
+
+def get_names_column_in_commit(commit: Commit, session: Session):
+    attr_in, attr_out = commit.attribute_id_in, commit.attribute_id_out
+    tablename = None
+    name1 = None
+    name2 = None
+    datatype1 = None
+    datatype2 = None
+    if get_type_of_commit_object(commit, session=session) == AttributeTypes.COLUMN:
+        if attr_in is not None:
+            s = session.query(DbColumnAttributes).filter(DbColumnAttributes.id == attr_in).one().name
+            name1 = s.name
+            column_id = s.column_id
+            datatype1 = s.datatype
+            find_table_id = session.query(DbColumn).filter(DbColumn.id == column_id).table_id
+            tablename = session.query(DbTableAttributes).filter(DbTableAttributes.table_id == find_table_id).name
+        elif attr_out is not None:
+            name2 = session.query(DbColumnAttributes).filter(DbColumnAttributes.id == attr_out).one().name
+            datatype2 = session.query(DbColumnAttributes).filter(DbColumnAttributes.id == attr_in).one().datatype
+    return tablename, name1, datatype1, name2, datatype2
