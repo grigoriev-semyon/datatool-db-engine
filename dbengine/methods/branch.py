@@ -211,3 +211,4 @@ def get_names_column_in_commit(commit: Commit, session: Session):
             table = get_table_in_branch_before_commit(branch, commit, find_table_id, session=session)
             tablename = table[1].name
     return tablename, name1, datatype1, name2, datatype2
+

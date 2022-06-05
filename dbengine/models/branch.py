@@ -26,6 +26,12 @@ class CommitActionTypes(str, Enum):
     CREATE = "CREATE"
 
 
+def commits_before_commit_in_branch(commit: Commit):
+    yield commit
+    while commit := commit.prev_commit:
+        yield commit
+
+
 class Branch(Base):
     id = Column(Integer, primary_key=True)
     type = Column(EnumDb(BranchTypes, native_enum=False), default=BranchTypes.WIP)
@@ -59,6 +65,8 @@ class Commit(Base):
     attribute_id_in = Column(Integer, ForeignKey("db_attributes.id"))
     attribute_id_out = Column(Integer, ForeignKey("db_attributes.id"))
     create_ts = Column(DateTime, default=datetime.utcnow, nullable=False)
+    sql_up = Column(String)
+    sql_down = Column(String)
 
     next_commit: List[Commit]
     prev_commit: Commit = relationship("Commit", foreign_keys=[prev_commit_id], backref="next_commit", remote_side=id)

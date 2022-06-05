@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from dbengine.methods.branch import get_action_of_commit, get_type_of_commit_object, get_names_table_in_commit, \
     get_names_column_in_commit
-from dbengine.models.branch import Branch, Commit, CommitActionTypes
+from dbengine.models.branch import Branch, Commit, CommitActionTypes, commits_before_commit_in_branch
 from dbengine.models.entity import AttributeTypes
 from dbengine.settings import Settings
 
@@ -76,7 +76,6 @@ class IDbConnector(metaclass=ABCMeta):
         """
         Generates SQL Code for migration any DataBase
         """
-        code = []
         s = branch.commits
         for row in s:
             object_type = get_type_of_commit_object(row, session=self._session)
@@ -92,27 +91,37 @@ class IDbConnector(metaclass=ABCMeta):
                 tablename, name1, datatype1, name2, datatype2 = get_names_column_in_commit(row, session=self._session)
             if object_type == AttributeTypes.TABLE:
                 if action_type == CommitActionTypes.CREATE and name1 is None and name2 is not None:
-                    code.append(self._create_table(name2))
+                    row.sql_up = self._create_table(name2)
+                    row.sql_down = self._delete_table(name2)
                 elif action_type == CommitActionTypes.ALTER and name1 is not None and name2 is not None:
-                    code.append(self._alter_table(name1, name2))
+                    row.sql_up = self._alter_table(name1, name2)
+                    row.sql_down = self._alter_table(name2, name1)
                 elif action_type == CommitActionTypes.DROP and name1 is not None and name2 is None:
-                    code.append(self._delete_table(name1))
+                    row.sql_up = self._delete_table(name1)
+                    row.sql_down = self._create_table(name1)
             elif object_type == AttributeTypes.COLUMN:
                 if action_type == CommitActionTypes.CREATE and name1 is None and datatype1 is None and name2 is not None and datatype2 is not None and tablename is not None:
-                    code.append(self._create_column(tablename, name2, datatype2))
+                    row.sql_up = self._create_column(tablename, name2, datatype2)
+                    row.sql_down = self._delete_column(tablename, name2)
                 if action_type == CommitActionTypes.ALTER and name1 is not None and datatype1 is not None and name2 is not None and datatype2 is not None and tablename is not None:
-                    code.append(self._alter_column(tablename, name1, name2, datatype1, datatype2))
+                    row.sql_up = self._alter_column(tablename, name1, name2, datatype1, datatype2)
+                    row.sql_down = self._alter_column(tablename, name2, name1, datatype2, datatype1)
                 if action_type == CommitActionTypes.DROP and name1 is not None and name2 is None and datatype1 is not None and datatype2 is None and tablename is not None:
-                    code.append(self._delete_column(tablename, name1))
-
-        return code.__reversed__()
+                    row.sql_up = self._delete_column(tablename, name1)
+                    row.sql_down = self._create_column(tablename, name1, datatype1)
 
     def execute(self, branch: Branch):
         """Execute Sql code"""
-        code = self._generate_migration(branch)
-
-        for row in code:
-            self._connection_test.execute(row)
+        test_error = None
+        prod_error = None
+        self._generate_migration(branch)
+        for row in branch.commits:
+            try:
+                self._connection_test.execute(row.sql_up)
+            except DBAPIError:
+                test_error = row
+                for s in commits_before_commit_in_branch(test_error):
+                    self._connection_test.execute(s.sql_down)
 
             ##откат
         # try:
@@ -121,6 +130,7 @@ class IDbConnector(metaclass=ABCMeta):
         # except DBAPIError:
         #     pass
         #     ##откат
+
 
 
 class PostgreConnector(IDbConnector):
