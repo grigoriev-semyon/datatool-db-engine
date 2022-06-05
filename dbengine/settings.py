@@ -1,8 +1,8 @@
-from pydantic import BaseSettings, AnyUrl
+from pydantic import BaseSettings, AnyUrl, PostgresDsn
 
 
 class Settings(BaseSettings):
-    DB_DSN: AnyUrl
+    DB_DSN: PostgresDsn
     DWH_CONNECTION_TEST: AnyUrl
     DWH_CONNECTION_PROD: AnyUrl
 
