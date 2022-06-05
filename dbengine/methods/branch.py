@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from dbengine.exceptions import BranchError, IncorrectBranchType, BranchNotFoundError, BranchConflict
 from dbengine.models import Branch, BranchTypes, Commit, DbAttributes, DbTableAttributes
-from dbengine.methods.table import get_tables, get_table
+from dbengine.methods.table import get_tables, get_table, get_table_in_branch_before_commit
 from dbengine.models.entity import AttributeTypes, DbColumnAttributes, DbColumn
 from dbengine.methods.column import get_columns, get_column
 from dbengine.models.branch import CommitActionTypes
@@ -198,22 +198,16 @@ def get_names_column_in_commit(commit: Commit, session: Session):
             column_id = s.column_id
             datatype1 = s.datatype
             find_table_id = session.query(DbColumn).filter(DbColumn.id == column_id).one_or_none().table_id
-            table_attrs = session.query(DbTableAttributes).filter(
-                and_(DbTableAttributes.table_id == find_table_id)).order_by(
-                DbTableAttributes.id.desc()).all()
-            for row in table_attrs:
-                if row.id < attr_in:
-                    tablename = row.name
+            branch = get_branch(commit.branch_id, session=session)
+            table = get_table_in_branch_before_commit(branch, commit, find_table_id, session=session)
+            tablename = table[1].name
         if attr_out is not None:
             s = session.query(DbColumnAttributes).filter(DbColumnAttributes.id == attr_out).one()
             name2 = s.name
             datatype2 = s.datatype
             column_id = s.column_id
             find_table_id = session.query(DbColumn).filter(DbColumn.id == column_id).one_or_none().table_id
-            table_attrs = session.query(DbTableAttributes).filter(
-                and_(DbTableAttributes.table_id == find_table_id)).order_by(
-                DbTableAttributes.id.desc()).all()
-            for row in table_attrs:
-                if row.id < attr_out:
-                    tablename = row.name
+            branch = get_branch(commit.branch_id, session=session)
+            table = get_table_in_branch_before_commit(branch, commit, find_table_id, session=session)
+            tablename = table[1].name
     return tablename, name1, datatype1, name2, datatype2
