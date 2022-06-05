@@ -31,7 +31,7 @@ class IDbConnector(metaclass=ABCMeta):
             self._engine_db_dsn = create_engine(self._settings.DB_DSN, echo=True)
             self._connection_test = self._engine_test.connect()
             self._connection_prod = self._engine_prod.connect()
-            self._Session = sessionmaker(self._engine_db_dsn)
+            self._Session = sessionmaker(self._engine_db_dsn, autocommit=True, autoflush=False)
             self._session = self._Session()
         except SQLAlchemyError:
             logging.error(SQLAlchemyError, exc_info=True)
@@ -72,7 +72,7 @@ class IDbConnector(metaclass=ABCMeta):
     def _alter_column(tablename: str, columnname: str, new_name: str, datatype: str, new_datatype: str):
         pass
 
-    def _generate_migration(self, branch: Branch):
+    def _generate_migration(self, branch: Branch, session: Session):
         """
         Generates SQL Code for migration any DataBase
         """
@@ -93,28 +93,34 @@ class IDbConnector(metaclass=ABCMeta):
                 if action_type == CommitActionTypes.CREATE and name1 is None and name2 is not None:
                     row.sql_up = self._create_table(name2)
                     row.sql_down = self._delete_table(name2)
+                    session.flush()
                 elif action_type == CommitActionTypes.ALTER and name1 is not None and name2 is not None:
                     row.sql_up = self._alter_table(name1, name2)
                     row.sql_down = self._alter_table(name2, name1)
+                    session.flush()
                 elif action_type == CommitActionTypes.DROP and name1 is not None and name2 is None:
                     row.sql_up = self._delete_table(name1)
                     row.sql_down = self._create_table(name1)
+                    session.flush()
             elif object_type == AttributeTypes.COLUMN:
                 if action_type == CommitActionTypes.CREATE and name1 is None and datatype1 is None and name2 is not None and datatype2 is not None and tablename is not None:
                     row.sql_up = self._create_column(tablename, name2, datatype2)
                     row.sql_down = self._delete_column(tablename, name2)
+                    session.flush()
                 if action_type == CommitActionTypes.ALTER and name1 is not None and datatype1 is not None and name2 is not None and datatype2 is not None and tablename is not None:
                     row.sql_up = self._alter_column(tablename, name1, name2, datatype1, datatype2)
                     row.sql_down = self._alter_column(tablename, name2, name1, datatype2, datatype1)
+                    session.flush()
                 if action_type == CommitActionTypes.DROP and name1 is not None and name2 is None and datatype1 is not None and datatype2 is None and tablename is not None:
                     row.sql_up = self._delete_column(tablename, name1)
                     row.sql_down = self._create_column(tablename, name1, datatype1)
+                    session.flush()
 
     def execute(self, branch: Branch):
         """Execute Sql code"""
         test_error = None
         prod_error = None
-        self._generate_migration(branch)
+        self._generate_migration(branch, session=self._session)
         for row in branch.commits:
             try:
                 self._connection_test.execute(row.sql_up)
