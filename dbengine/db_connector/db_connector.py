@@ -3,6 +3,7 @@ from abc import ABCMeta, abstractmethod
 
 from sqlalchemy.engine import Engine, create_engine
 from sqlalchemy.exc import SQLAlchemyError, DBAPIError
+from sqlalchemy.future import Connection
 from sqlalchemy.orm import Session, sessionmaker
 
 from dbengine.methods.branch import get_action_of_commit, get_type_of_commit_object, get_names_table_in_commit, \
@@ -14,19 +15,23 @@ from dbengine.settings import Settings
 
 class IDbConnector(metaclass=ABCMeta):
     _settings: Settings = Settings()
-    _connection_db_dsn: Engine = None
-    _connection_test: Engine = None
-    _connection_prod: Engine = None
+    _engine_db_dsn: Engine = None
+    _engine_test: Engine = None
+    _engine_prod: Engine = None
+    _connection_test: Connection = None
+    _connection_prod: Connection = None
     _session = None
     _Session = None
 
     def _connect(self):
         """Connect to DB and create self._connection Engine`"""
         try:
-            self._connection_test = create_engine(self._settings.DWH_CONNECTION_TEST, echo=True)
-            self._connection_prod = create_engine(self._settings.DWH_CONNECTION_PROD, echo=True)
-            self._connection_db_dsn = create_engine(self._settings.DB_DSN, echo=True)
-            self._Session = sessionmaker(self._connection_db_dsn)
+            self._engine_test = create_engine(self._settings.DWH_CONNECTION_TEST, echo=True)
+            self._engine_prod = create_engine(self._settings.DWH_CONNECTION_PROD, echo=True)
+            self._engine_db_dsn = create_engine(self._settings.DB_DSN, echo=True)
+            self._connection_test = self._engine_prod.connect()
+            self._connection_prod = self._engine_prod.connect()
+            self._Session = sessionmaker(self._engine_db_dsn)
             self._session = self._Session()
         except SQLAlchemyError:
             logging.error(SQLAlchemyError, exc_info=True)
@@ -100,16 +105,15 @@ class IDbConnector(metaclass=ABCMeta):
                 if action_type == CommitActionTypes.DROP and name1 is not None and name2 is None and datatype1 is not None and datatype2 is None and tablename is not None:
                     code.append(self._delete_column(tablename, name1))
 
-        return code
+        return code.__reversed__()
 
     def execute(self, branch: Branch):
         """Execute Sql code"""
         code = self._generate_migration(branch)
-        try:
-            for row in code:
-                self._connection_test.execute(row)
-        except DBAPIError:
-            pass
+
+        for row in code:
+            self._connection_test.execute(row)
+
             ##откат
         # try:
         #     for row in code:
@@ -122,27 +126,28 @@ class IDbConnector(metaclass=ABCMeta):
 class PostgreConnector(IDbConnector):
     @staticmethod
     def _create_table(tablename: str):
-        return f"CREATE TABLE {tablename};"
+        return f"CREATE TABLE {tablename} ();"
 
     @staticmethod
     def _create_column(tablename: str, columnname: str, columntype: str):
-        return f'{"ALTER TABLE"} {tablename} ADD COLUMN {columnname} {columntype};'
+        return f'{"ALTER TABLE"} {tablename}' \
+               f'   ADD COLUMN {columnname} {columntype}'
 
     @staticmethod
     def _delete_column(tablename: str, columnname: str):
-        return f"{'ALTER TABLE'} {tablename} DROP COLUMN {columnname};"
+        return f"{'ALTER TABLE'} {tablename} DROP COLUMN {columnname}"
 
     @staticmethod
     def _delete_table(tablename: str):
-        return f"{'DROP TABLE'} {tablename};"
+        return f"{'DROP TABLE'} {tablename}"
 
     @staticmethod
     def _alter_table(tablename: str, new_tablename: str):
-        return f"{'ALTER TABLE'} {tablename} RENAME TO {new_tablename};"
+        return f"{'ALTER TABLE'} {tablename} RENAME TO {new_tablename}"
 
     @staticmethod
     def _alter_column(tablename: str, columnname: str, new_name: str, datatype: str, new_datatype: str):
         tmp_columnname = f"tmp_{columnname}"
-        return f"{'ALTER TABLE'}' {tablename} RENAME COLUMN {new_name} TO {tmp_columnname};" \
+        return f"{'ALTER TABLE'}' {tablename} RENAME COLUMN {new_name} TO {tmp_columnname}" \
                f"ALTER TABLE {tablename} ADD {new_name} AS ({tmp_columnname} as {new_datatype})" \
-               f"ALTER TABLE {tablename} DROP COLUMN {tmp_columnname};"
+               f"ALTER TABLE {tablename} DROP COLUMN {tmp_columnname}"
