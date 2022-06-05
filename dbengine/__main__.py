@@ -1,6 +1,6 @@
 import uvicorn
 from dbengine import app
-from dbengine.DbConnector.DbConnector import PostgreConnector
+from dbengine.db_connector.db_connector import PostgreConnector
 from dbengine.methods.branch import get_branch
 from fastapi_sqlalchemy import db
 
