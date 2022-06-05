@@ -20,7 +20,7 @@ class IDbConnector(metaclass=ABCMeta):
     _session = None
     _Session = None
 
-    def connect(self):
+    def _connect(self):
         """Connect to DB and create self._connection Engine`"""
         try:
             self._connection_test = create_engine(self._settings.DWH_CONNECTION_TEST, echo=True)
@@ -33,6 +33,9 @@ class IDbConnector(metaclass=ABCMeta):
 
     def get_session(self):
         return self._session
+
+    def __init__(self):
+        self._connect()
 
     @staticmethod
     @abstractmethod
