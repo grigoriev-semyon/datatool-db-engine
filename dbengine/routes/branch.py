@@ -9,6 +9,7 @@ from dbengine.exceptions import BranchError, BranchNotFoundError
 from dbengine.methods import create_branch, get_branch, ok_branch, request_merge_branch, unrequest_merge_branch
 from dbengine.models import BranchTypes
 from dbengine.routes.models import Branch
+from dbengine.db_connector.db_connector import PostgreConnector
 
 branch_router = APIRouter(prefix="/branch", tags=["Branch"])
 
@@ -75,3 +76,5 @@ async def patch_branch(branch_id: int, name: str):
         raise HTTPException(status_code=403)
     branch.name = name
     db.session.flush()
+
+

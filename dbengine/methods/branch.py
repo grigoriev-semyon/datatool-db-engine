@@ -4,7 +4,8 @@ from typing import Tuple
 from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
-from dbengine.exceptions import BranchError, IncorrectBranchType, BranchNotFoundError, BranchConflict
+from dbengine.exceptions import BranchError, IncorrectBranchType, BranchNotFoundError, BranchConflict, \
+    TableDoesntExists, ColumnDoesntExists
 from dbengine.models import Branch, BranchTypes, Commit, DbAttributes, DbTableAttributes
 from dbengine.methods.table import get_tables, get_table, get_table_in_branch_before_commit
 from dbengine.models.entity import AttributeTypes, DbColumnAttributes, DbColumn
@@ -139,14 +140,24 @@ def check_conflicts(branch: Branch, session: Session):
     tables, columns = get_all_tables_and_columns_in_branch(branch, session=session)
     for row in tables:
         table_id = row[0].id
-        main_table = get_table(get_branch(1, session=session), table_id, session=session)
-        if main_table[1].create_ts > branch.create_ts:
-            raise BranchConflict(branch.id)
+        main_table = None
+        try:
+            main_table = get_table(get_branch(1, session=session), table_id, session=session)
+        except TableDoesntExists:
+            pass
+        if main_table:
+            if main_table[1].create_ts > branch.create_ts:
+                raise BranchConflict(branch.id)
     for row in columns:
         column_id = row[0].id
-        main_column = get_column(get_branch(1, session=session), column_id, session=session)
-        if main_column[1].create_ts > branch.create_ts:
-            raise BranchConflict(branch.id)
+        main_column = None
+        try:
+            main_column = get_column(get_branch(1, session=session), column_id, session=session)
+        except ColumnDoesntExists:
+            pass
+        if main_column:
+            if main_column[1].create_ts > branch.create_ts:
+                raise BranchConflict(branch.id)
     return True
 
 
@@ -179,7 +190,7 @@ def get_names_table_in_commit(commit: Commit, session: Session):
     if get_type_of_commit_object(commit, session=session) == AttributeTypes.TABLE:
         if attr_in is not None:
             name1 = session.query(DbTableAttributes).filter(DbTableAttributes.id == attr_in).one().name
-        elif attr_out is not None:
+        if attr_out is not None:
             name2 = session.query(DbTableAttributes).filter(DbTableAttributes.id == attr_out).one().name
     return name1, name2
 

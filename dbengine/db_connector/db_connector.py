@@ -31,15 +31,16 @@ class IDbConnector(metaclass=ABCMeta):
             self._engine_db_dsn = create_engine(self._settings.DB_DSN, echo=True)
             self._connection_test = self._engine_test.connect()
             self._connection_prod = self._engine_prod.connect()
-            self._Session = sessionmaker(self._engine_db_dsn, autocommit=True, autoflush=False)
-            self._session = self._Session()
+            # self._Session = sessionmaker(self._engine_db_dsn, autocommit=True, autoflush=False)
+            # self._session = self._Session()
         except SQLAlchemyError:
             logging.error(SQLAlchemyError, exc_info=True)
 
     def get_session(self):
         return self._session
 
-    def __init__(self):
+    def __init__(self, session: Session):
+        self._session = session
         self._connect()
 
     @staticmethod
