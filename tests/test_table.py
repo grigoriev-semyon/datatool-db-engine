@@ -9,7 +9,7 @@ def test_create():
     session = Session()
     branch = create_branch("Test Table 1", session=session)
     table, tab_attr, commit = create_table(branch, "test_table_1", session=session)
-    col_1, col_attr_1, commit_1 = create_column(branch, table, name="id", datatype="string", session=session)
+    col_1, col_attr_1, commit_1 = create_column(branch, table, name="id", datatype="VARCHAR(256)", session=session)
 
     assert tab_attr.name == "test_table_1"
     assert tab_attr.table_id == table.id
@@ -17,7 +17,7 @@ def test_create():
     assert commit.attribute_id_out == tab_attr.id
 
     assert col_attr_1.name == "id"
-    assert col_attr_1.datatype == "string"
+    assert col_attr_1.datatype == "VARCHAR(256)"
     assert col_attr_1.column_id == col_1.id
     assert col_1.table_id == table.id
     assert commit_1.attribute_id_in is None
@@ -60,7 +60,7 @@ def test_column_get():
     branch = create_branch("Test Table 1", session=session)
     branch2 = create_branch("Test Table 3", session=session)
     table, _, _ = create_table(branch, "test_table_1", session=session)
-    col, attrs, _ = create_column(branch, table, name="id", datatype="string", session=session)
+    col, attrs, _ = create_column(branch, table, name="id", datatype="VARCHAR(256)", session=session)
     request_merge_branch(branch, session=session)
     ok_branch(branch, session=session)
     col_id = col.id

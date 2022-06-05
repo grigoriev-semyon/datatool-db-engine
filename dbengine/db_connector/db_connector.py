@@ -7,8 +7,8 @@ from sqlalchemy.future import Connection
 from sqlalchemy.orm import Session, sessionmaker
 
 from dbengine.methods.branch import get_action_of_commit, get_type_of_commit_object, get_names_table_in_commit, \
-    get_names_column_in_commit
-from dbengine.models.branch import Branch, Commit, CommitActionTypes, commits_before_commit_in_branch
+    get_names_column_in_commit, check_conflicts
+from dbengine.models.branch import Branch, Commit, CommitActionTypes
 from dbengine.models.entity import AttributeTypes
 from dbengine.settings import Settings
 
@@ -120,14 +120,21 @@ class IDbConnector(metaclass=ABCMeta):
         """Execute Sql code"""
         test_error = None
         prod_error = None
+        commits = []
+        done_commits = []
+        check_conflicts(branch, self._session)
         self._generate_migration(branch, session=self._session)
         for row in branch.commits:
+            if row.sql_up is not None and row.sql_down is not None:
+                commits.append(row)
+        for row in commits.__reversed__():
             try:
                 self._connection_test.execute(row.sql_up)
+                done_commits.append(row)
             except DBAPIError:
-                test_error = row
-                for s in commits_before_commit_in_branch(test_error):
-                    self._connection_test.execute(s.sql_down)
+                for s in done_commits.__reversed__():
+                    self._connection_test.execute(row.sql_down)
+
 
             ##откат
         # try:
