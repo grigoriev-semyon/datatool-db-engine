@@ -29,7 +29,7 @@ class IDbConnector(metaclass=ABCMeta):
             self._engine_test = create_engine(self._settings.DWH_CONNECTION_TEST, echo=True)
             self._engine_prod = create_engine(self._settings.DWH_CONNECTION_PROD, echo=True)
             self._engine_db_dsn = create_engine(self._settings.DB_DSN, echo=True)
-            self._connection_test = self._engine_prod.connect()
+            self._connection_test = self._engine_test.connect()
             self._connection_prod = self._engine_prod.connect()
             self._Session = sessionmaker(self._engine_db_dsn)
             self._session = self._Session()
@@ -130,24 +130,23 @@ class PostgreConnector(IDbConnector):
 
     @staticmethod
     def _create_column(tablename: str, columnname: str, columntype: str):
-        return f'{"ALTER TABLE"} {tablename}' \
-               f'   ADD COLUMN {columnname} {columntype}'
+        return f'{"ALTER TABLE"} {tablename} ADD COLUMN {columnname} {columntype};'
 
     @staticmethod
     def _delete_column(tablename: str, columnname: str):
-        return f"{'ALTER TABLE'} {tablename} DROP COLUMN {columnname}"
+        return f"{'ALTER TABLE'} {tablename} DROP COLUMN {columnname};"
 
     @staticmethod
     def _delete_table(tablename: str):
-        return f"{'DROP TABLE'} {tablename}"
+        return f"{'DROP TABLE'} {tablename};"
 
     @staticmethod
     def _alter_table(tablename: str, new_tablename: str):
-        return f"{'ALTER TABLE'} {tablename} RENAME TO {new_tablename}"
+        return f"{'ALTER TABLE'} {tablename} RENAME TO {new_tablename};"
 
     @staticmethod
     def _alter_column(tablename: str, columnname: str, new_name: str, datatype: str, new_datatype: str):
         tmp_columnname = f"tmp_{columnname}"
         return f"{'ALTER TABLE'}' {tablename} RENAME COLUMN {new_name} TO {tmp_columnname}" \
                f"ALTER TABLE {tablename} ADD {new_name} AS ({tmp_columnname} as {new_datatype})" \
-               f"ALTER TABLE {tablename} DROP COLUMN {tmp_columnname}"
+               f"ALTER TABLE {tablename} DROP COLUMN {tmp_columnname};"
