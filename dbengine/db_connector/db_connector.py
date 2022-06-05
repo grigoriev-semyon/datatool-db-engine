@@ -116,10 +116,8 @@ class IDbConnector(metaclass=ABCMeta):
                     row.sql_down = self._create_column(tablename, name1, datatype1)
                     session.flush()
 
-    def execute(self, branch: Branch):
+    def execute_test(self, branch: Branch):
         """Execute Sql code"""
-        test_error = None
-        prod_error = None
         commits = []
         done_commits = []
         check_conflicts(branch, self._session)
@@ -135,15 +133,21 @@ class IDbConnector(metaclass=ABCMeta):
                 for s in done_commits.__reversed__():
                     self._connection_test.execute(row.sql_down)
 
-
-            ##откат
-        # try:
-        #     for row in code:
-        #         self._connection_prod.execute(row)
-        # except DBAPIError:
-        #     pass
-        #     ##откат
-
+    def execute_prod(self, branch: Branch):
+        commits = []
+        done_commits = []
+        check_conflicts(branch, self._session)
+        self._generate_migration(branch, session=self._session)
+        for row in branch.commits:
+            if row.sql_up is not None and row.sql_down is not None:
+                commits.append(row)
+        for row in commits.__reversed__():
+            try:
+                self._connection_prod.execute(row.sql_up)
+                done_commits.append(row)
+            except DBAPIError:
+                for s in done_commits.__reversed__():
+                    self._connection_prod.execute(row.sql_down)
 
 
 class PostgreConnector(IDbConnector):
