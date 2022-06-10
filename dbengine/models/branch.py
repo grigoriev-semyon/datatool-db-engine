@@ -26,12 +26,6 @@ class CommitActionTypes(str, Enum):
     CREATE = "CREATE"
 
 
-def commits_before_commit_in_branch(commit: Commit):
-    yield commit
-    while commit := commit.prev_commit:
-        yield commit
-
-
 class Branch(Base):
     id = Column(Integer, primary_key=True)
     type = Column(EnumDb(BranchTypes, native_enum=False), default=BranchTypes.WIP)
