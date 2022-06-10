@@ -2,6 +2,7 @@ import logging
 from typing import Tuple
 
 from sqlalchemy import and_
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session
 
 from dbengine.exceptions import BranchError, IncorrectBranchType, BranchNotFoundError, BranchConflict, \
@@ -11,6 +12,7 @@ from dbengine.methods.table import get_tables, get_table
 from dbengine.models.entity import AttributeTypes, DbColumnAttributes, DbColumn
 from dbengine.methods.column import get_columns, get_column
 from dbengine.models.branch import CommitActionTypes
+from dbengine.__init__ import test_connector, prod_connector
 
 logger = logging.getLogger(__name__)
 
@@ -57,8 +59,21 @@ def request_merge_branch(branch: Branch, *, session: Session) -> Branch:
 
     Только если сейчас WIP
     """
-    if branch.type != BranchTypes.WIP:
+    if branch.type != BranchTypes.WIP and not check_conflicts(branch, session=session):
         raise IncorrectBranchType("request merge", "main")
+    commits = []
+    done_commits = []
+    test_connector.generate_migration(branch, session=session)
+    for row in branch.commits:
+        if row.sql_up is not None and row.sql_down is not None:
+            commits.append(row)
+    for row in commits.__reversed__():
+        try:
+            test_connector.execute(row.sql_up)
+            done_commits.append(row)
+        except DBAPIError:
+            for s in done_commits.__reversed__():
+                test_connector.execute(s.sql_down)
     branch.type = BranchTypes.MR
     session.query(Branch).filter(Branch.id == branch.id).update({"type": BranchTypes.MR})
     session.flush()
