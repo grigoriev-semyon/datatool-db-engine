@@ -63,7 +63,7 @@ def request_merge_branch(branch: Branch, *, session: Session) -> Branch:
         raise IncorrectBranchType("request merge", "main")
     commits = []
     done_commits = []
-    test_connector.generate_migration(branch, session=session)
+    test_connector.generate_migration(branch)
     for row in branch.commits:
         if row.sql_up is not None and row.sql_down is not None:
             commits.append(row)
