@@ -1,14 +1,15 @@
 import logging
 from abc import ABCMeta, abstractmethod
 
+from pydantic import AnyUrl
 from sqlalchemy.engine import Engine, create_engine
-from sqlalchemy.exc import SQLAlchemyError, DBAPIError
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.future import Connection
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session
 
 from dbengine.methods.branch import get_action_of_commit, get_type_of_commit_object, get_names_table_in_commit, \
-    get_names_column_in_commit, check_conflicts
-from dbengine.models.branch import Branch, Commit, CommitActionTypes
+    get_names_column_in_commit
+from dbengine.models.branch import Branch, CommitActionTypes
 from dbengine.models.entity import AttributeTypes
 from dbengine.settings import Settings
 
@@ -16,31 +17,27 @@ from dbengine.settings import Settings
 class IDbConnector(metaclass=ABCMeta):
     _settings: Settings = Settings()
     _engine_db_dsn: Engine = None
-    _engine_test: Engine = None
-    _engine_prod: Engine = None
-    _connection_test: Connection = None
-    _connection_prod: Connection = None
+    _engine: Engine = None
+    _connection: Connection = None
+    _connection_url: AnyUrl = None
     _session = None
     _Session = None
 
     def _connect(self):
         """Connect to DB and create self._connection Engine`"""
         try:
-            self._engine_test = create_engine(self._settings.DWH_CONNECTION_TEST, echo=True)
-            self._engine_prod = create_engine(self._settings.DWH_CONNECTION_PROD, echo=True)
+            self._engine = create_engine(self._connection, echo=True)
             self._engine_db_dsn = create_engine(self._settings.DB_DSN, echo=True)
-            self._connection_test = self._engine_test.connect()
-            self._connection_prod = self._engine_prod.connect()
-            # self._Session = sessionmaker(self._engine_db_dsn, autocommit=True, autoflush=False)
-            # self._session = self._Session()
+            self._connection = self._engine.connect()
         except SQLAlchemyError:
             logging.error(SQLAlchemyError, exc_info=True)
 
     def get_session(self):
         return self._session
 
-    def __init__(self, session: Session):
+    def __init__(self, session: Session, connection_url: AnyUrl):
         self._session = session
+        self._connection_url = connection_url
         self._connect()
 
     @staticmethod
@@ -117,38 +114,9 @@ class IDbConnector(metaclass=ABCMeta):
                     row.sql_down = self._create_column(tablename, name1, datatype1)
                     session.flush()
 
-    def execute_test(self, branch: Branch):
+    def execute_test(self, str: str):
         """Execute Sql code"""
-        commits = []
-        done_commits = []
-        check_conflicts(branch, self._session)
-        self._generate_migration(branch, session=self._session)
-        for row in branch.commits:
-            if row.sql_up is not None and row.sql_down is not None:
-                commits.append(row)
-        for row in commits.__reversed__():
-            try:
-                self._connection_test.execute(row.sql_up)
-                done_commits.append(row)
-            except DBAPIError:
-                for s in done_commits.__reversed__():
-                    self._connection_test.execute(row.sql_down)
-
-    def execute_prod(self, branch: Branch):
-        commits = []
-        done_commits = []
-        check_conflicts(branch, self._session)
-        self._generate_migration(branch, session=self._session)
-        for row in branch.commits:
-            if row.sql_up is not None and row.sql_down is not None:
-                commits.append(row)
-        for row in commits.__reversed__():
-            try:
-                self._connection_prod.execute(row.sql_up)
-                done_commits.append(row)
-            except DBAPIError:
-                for s in done_commits.__reversed__():
-                    self._connection_prod.execute(row.sql_down)
+        self._connection.execute(str)
 
 
 class PostgreConnector(IDbConnector):
@@ -177,6 +145,7 @@ class PostgreConnector(IDbConnector):
         tmp_columnname = f"tmp_{columnname}"
         n1 = " \n"
         first_query = f"ALTER TABLE {tablename} RENAME COLUMN {new_name} TO {tmp_columnname}".join(n1).lstrip()
-        second_query = f"ALTER TABLE {tablename} ADD {new_name} AS ({tmp_columnname} as {new_datatype})".join(n1).lstrip()
+        second_query = f"ALTER TABLE {tablename} ADD {new_name} AS ({tmp_columnname} as {new_datatype})".join(
+            n1).lstrip()
         third_query = f"ALTER TABLE {tablename} DROP COLUMN {tmp_columnname};"
         return f"{first_query}{second_query}{third_query}"

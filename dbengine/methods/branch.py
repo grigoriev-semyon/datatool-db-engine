@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from dbengine.exceptions import BranchError, IncorrectBranchType, BranchNotFoundError, BranchConflict, \
     TableDoesntExists, ColumnDoesntExists
 from dbengine.models import Branch, BranchTypes, Commit, DbAttributes, DbTableAttributes
-from dbengine.methods.table import get_tables, get_table, get_table_in_branch_before_commit
+from dbengine.methods.table import get_tables, get_table
 from dbengine.models.entity import AttributeTypes, DbColumnAttributes, DbColumn
 from dbengine.methods.column import get_columns, get_column
 from dbengine.models.branch import CommitActionTypes
@@ -206,7 +206,7 @@ def get_names_column_in_commit(commit: Commit, session: Session):
             datatype1 = s.datatype
             find_table_id = session.query(DbColumn).filter(DbColumn.id == column_id).one_or_none().table_id
             branch = get_branch(commit.branch_id, session=session)
-            table = get_table_in_branch_before_commit(branch, commit, find_table_id, session=session)
+            table = get_table(branch, find_table_id, commit, session=session)
             tablename = table[1].name
         if attr_out is not None:
             s = session.query(DbColumnAttributes).filter(DbColumnAttributes.id == attr_out).one()
@@ -215,6 +215,6 @@ def get_names_column_in_commit(commit: Commit, session: Session):
             column_id = s.column_id
             find_table_id = session.query(DbColumn).filter(DbColumn.id == column_id).one_or_none().table_id
             branch = get_branch(commit.branch_id, session=session)
-            table = get_table_in_branch_before_commit(branch, commit, find_table_id, session=session)
+            table = get_table(branch, find_table_id, commit, session=session)
             tablename = table[1].name
     return tablename, name1, datatype1, name2, datatype2
