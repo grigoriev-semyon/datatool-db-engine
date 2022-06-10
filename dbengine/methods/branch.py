@@ -74,8 +74,12 @@ def request_merge_branch(branch: Branch, *, session: Session) -> Branch:
         except DBAPIError:
             for s in done_commits.__reversed__():
                 test_connector.execute(s.sql_down)
-                raise MergeError(branch.id)
-
+            raise MergeError(branch.id)
+    for row in commits:
+        try:
+            test_connector.execute(row.sql_down)
+        except DBAPIError:
+            raise MergeError
     branch.type = BranchTypes.MR
     session.query(Branch).filter(Branch.id == branch.id).update({"type": BranchTypes.MR})
     session.flush()
@@ -103,8 +107,22 @@ def ok_branch(branch: Branch, *, session: Session) -> Branch:
 
     Только если сейчас MR
     """
-    if branch.type != BranchTypes.MR:
+    if branch.type != BranchTypes.MR and not check_conflicts(branch, session=session):
         raise IncorrectBranchType("Confirm merge", branch.name)
+    commits = []
+    done_commits = []
+    test_connector.generate_migration(branch)
+    for row in branch.commits:
+        if row.sql_up is not None and row.sql_down is not None:
+            commits.append(row)
+    for row in commits.__reversed__():
+        try:
+            test_connector.execute(row.sql_up)
+            done_commits.append(row)
+        except DBAPIError:
+            for s in done_commits.__reversed__():
+                test_connector.execute(s.sql_down)
+            raise MergeError(branch.id)
     branch.type = BranchTypes.MERGED
     session.query(Branch).filter(Branch.id == branch.id).update({"type": BranchTypes.MERGED})
     session.flush()
