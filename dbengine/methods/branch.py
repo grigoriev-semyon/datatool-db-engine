@@ -196,7 +196,7 @@ def check_conflicts(branch: Branch, session: Session):
     return True
 
 
-def get_type_of_commit_object(commit: Commit, session: Session):
+def get_type_of_commit_object(commit: Commit, session: Session) -> str:
     anyattr = commit.attribute_id_in or commit.attribute_id_out
     s = session.query(DbAttributes).filter(DbAttributes.id == anyattr).one_or_none()
     if not s:
@@ -204,7 +204,7 @@ def get_type_of_commit_object(commit: Commit, session: Session):
     return s.type
 
 
-def get_action_of_commit(commit: Commit):
+def get_action_of_commit(commit: Commit) -> str:
     attr_in, attr_out = commit.attribute_id_in, commit.attribute_id_out
     if attr_in is not None and attr_out is not None:
         return CommitActionTypes.ALTER
@@ -214,7 +214,7 @@ def get_action_of_commit(commit: Commit):
         return CommitActionTypes.CREATE
 
 
-def get_names_table_in_commit(commit: Commit, session: Session):
+def get_names_table_in_commit(commit: Commit, session: Session) -> Tuple:
     attr_in, attr_out = commit.attribute_id_in, commit.attribute_id_out
     name1 = None
     name2 = None
@@ -226,7 +226,7 @@ def get_names_table_in_commit(commit: Commit, session: Session):
     return name1, name2
 
 
-def get_names_column_in_commit(commit: Commit, session: Session):
+def get_names_column_in_commit(commit: Commit, session: Session) -> Tuple:
     attr_in, attr_out = commit.attribute_id_in, commit.attribute_id_out
     tablename, name1, name2, datatype1, datatype2 = None, None, None, None, None
     if get_type_of_commit_object(commit, session=session) == AttributeTypes.COLUMN:
