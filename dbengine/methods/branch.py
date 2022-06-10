@@ -111,17 +111,17 @@ def ok_branch(branch: Branch, *, session: Session) -> Branch:
         raise IncorrectBranchType("Confirm merge", branch.name)
     commits = []
     done_commits = []
-    test_connector.generate_migration(branch)
+    prod_connector.generate_migration(branch)
     for row in branch.commits:
         if row.sql_up is not None and row.sql_down is not None:
             commits.append(row)
     for row in commits.__reversed__():
         try:
-            test_connector.execute(row.sql_up)
+            prod_connector.execute(row.sql_up)
             done_commits.append(row)
         except DBAPIError:
             for s in done_commits.__reversed__():
-                test_connector.execute(s.sql_down)
+                prod_connector.execute(s.sql_down)
             raise MergeError(branch.id)
     branch.type = BranchTypes.MERGED
     session.query(Branch).filter(Branch.id == branch.id).update({"type": BranchTypes.MERGED})
