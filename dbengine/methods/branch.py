@@ -162,15 +162,11 @@ def check_conflicts(branch: Branch, session: Session):
 
 
 def get_type_of_commit_object(commit: Commit, session: Session):
-    attr_in, attr_out = commit.attribute_id_in, commit.attribute_id_out
-    if attr_in is not None:
-        s = session.query(DbAttributes).filter(DbAttributes.id == attr_in).one_or_none()
-        return s.type
-    elif attr_out is not None:
-        s = session.query(DbAttributes).filter(DbAttributes.id == attr_out).one_or_none()
-        return s.type
-    else:
+    anyattr = commit.attribute_id_in or commit.attribute_id_out  # Возьмет первый не None
+    s = session.query(DbAttributes).filter(DbAttributes.id == anyattr).one_or_none()
+    if not s:
         return None
+    return anyattr.type
 
 
 def get_action_of_commit(commit: Commit):
@@ -222,4 +218,3 @@ def get_names_column_in_commit(commit: Commit, session: Session):
             table = get_table_in_branch_before_commit(branch, commit, find_table_id, session=session)
             tablename = table[1].name
     return tablename, name1, datatype1, name2, datatype2
-
