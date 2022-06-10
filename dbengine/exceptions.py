@@ -27,6 +27,12 @@ class BranchConflict(BranchError):
         super().__init__(message)
 
 
+class MergeError(BranchError):
+    def __init__(self, branch_id: int):
+        message = f"Merging error occurred with branch {branch_id}"
+        super().__init__(message)
+
+
 class TableError(Exception):
     def __init__(self, message="Table error occurred"):
         super().__init__(message)

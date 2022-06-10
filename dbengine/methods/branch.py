@@ -6,7 +6,7 @@ from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session
 
 from dbengine.exceptions import BranchError, IncorrectBranchType, BranchNotFoundError, BranchConflict, \
-    TableDoesntExists, ColumnDoesntExists
+    TableDoesntExists, ColumnDoesntExists, MergeError
 from dbengine.models import Branch, BranchTypes, Commit, DbAttributes, DbTableAttributes
 from dbengine.methods.table import get_tables, get_table
 from dbengine.models.entity import AttributeTypes, DbColumnAttributes, DbColumn
@@ -74,6 +74,8 @@ def request_merge_branch(branch: Branch, *, session: Session) -> Branch:
         except DBAPIError:
             for s in done_commits.__reversed__():
                 test_connector.execute(s.sql_down)
+                raise MergeError(branch.id)
+
     branch.type = BranchTypes.MR
     session.query(Branch).filter(Branch.id == branch.id).update({"type": BranchTypes.MR})
     session.flush()
