@@ -228,28 +228,18 @@ def get_names_table_in_commit(commit: Commit, session: Session):
 
 def get_names_column_in_commit(commit: Commit, session: Session):
     attr_in, attr_out = commit.attribute_id_in, commit.attribute_id_out
-    tablename = None
-    name1 = None
-    name2 = None
-    datatype1 = None
-    datatype2 = None
+    tablename, name1, name2, datatype1, datatype2 = None, None, None, None, None
     if get_type_of_commit_object(commit, session=session) == AttributeTypes.COLUMN:
+        branch = get_branch(commit.branch_id, session=session)
         if attr_in is not None:
             s = session.query(DbColumnAttributes).filter(DbColumnAttributes.id == attr_in).one()
-            name1 = s.name
-            column_id = s.column_id
-            datatype1 = s.datatype
-            find_table_id = session.query(DbColumn).filter(DbColumn.id == column_id).one_or_none().table_id
-            branch = get_branch(commit.branch_id, session=session)
-            table = get_table(branch, find_table_id, commit, session=session)
-            tablename = table[1].name
+            name1, datatype1 = s.name, s.datatype
+            find_table_id = session.query(DbColumn).filter(DbColumn.id == s.column_id).one().table_id
+            tablename = get_table(branch, find_table_id, commit, session=session)[1].name
         if attr_out is not None:
             s = session.query(DbColumnAttributes).filter(DbColumnAttributes.id == attr_out).one()
-            name2 = s.name
-            datatype2 = s.datatype
-            column_id = s.column_id
-            find_table_id = session.query(DbColumn).filter(DbColumn.id == column_id).one_or_none().table_id
-            branch = get_branch(commit.branch_id, session=session)
-            table = get_table(branch, find_table_id, commit, session=session)
-            tablename = table[1].name
+            name2, datatype2 = s.name, s.datatype
+            if not tablename:
+                find_table_id = session.query(DbColumn).filter(DbColumn.id == s.column_id).one().table_id
+                tablename = get_table(branch, find_table_id, commit, session=session)[1].name
     return tablename, name1, datatype1, name2, datatype2
