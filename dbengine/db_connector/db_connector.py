@@ -158,23 +158,25 @@ class PostgreConnector(IDbConnector):
 
     @staticmethod
     def _create_column(tablename: str, columnname: str, columntype: str):
-        return f'{"ALTER TABLE"} {tablename} ADD COLUMN {columnname} {columntype};'
+        return f'ALTER TABLE {tablename} ADD COLUMN {columnname} {columntype};'
 
     @staticmethod
     def _delete_column(tablename: str, columnname: str):
-        return f"{'ALTER TABLE'} {tablename} DROP COLUMN {columnname};"
+        return f"ALTER TABLE {tablename} DROP COLUMN {columnname};"
 
     @staticmethod
     def _delete_table(tablename: str):
-        return f"{'DROP TABLE'} {tablename};"
+        return f"DROP TABLE {tablename};"
 
     @staticmethod
     def _alter_table(tablename: str, new_tablename: str):
-        return f"{'ALTER TABLE'} {tablename} RENAME TO {new_tablename};"
+        return f"ALTER TABLE {tablename} RENAME TO {new_tablename};"
 
     @staticmethod
     def _alter_column(tablename: str, columnname: str, new_name: str, datatype: str, new_datatype: str):
         tmp_columnname = f"tmp_{columnname}"
-        return f"{'ALTER TABLE'}' {tablename} RENAME COLUMN {new_name} TO {tmp_columnname}" \
-               f"ALTER TABLE {tablename} ADD {new_name} AS ({tmp_columnname} as {new_datatype})" \
-               f"ALTER TABLE {tablename} DROP COLUMN {tmp_columnname};"
+        n1 = " \n"
+        first_query = f"ALTER TABLE {tablename} RENAME COLUMN {new_name} TO {tmp_columnname}".join(n1).lstrip()
+        second_query = f"ALTER TABLE {tablename} ADD {new_name} AS ({tmp_columnname} as {new_datatype})".join(n1).lstrip()
+        third_query = f"ALTER TABLE {tablename} DROP COLUMN {tmp_columnname};"
+        return f"{first_query}{second_query}{third_query}"
