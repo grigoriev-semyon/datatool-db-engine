@@ -197,11 +197,11 @@ def check_conflicts(branch: Branch, session: Session):
 
 
 def get_type_of_commit_object(commit: Commit, session: Session):
-    anyattr = commit.attribute_id_in or commit.attribute_id_out  # Возьмет первый не None
+    anyattr = commit.attribute_id_in or commit.attribute_id_out
     s = session.query(DbAttributes).filter(DbAttributes.id == anyattr).one_or_none()
     if not s:
         return None
-    return anyattr.type
+    return s.type
 
 
 def get_action_of_commit(commit: Commit):
