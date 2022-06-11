@@ -157,43 +157,30 @@ def get_branch(id: int, *, session: Session) -> Branch:
     return result
 
 
-def get_all_tables_and_columns_in_branch(branch: Branch, session: Session):
-    table_ids = get_tables(branch, session=session)
-    tables = []
-    columns = []
-    for tablerow in table_ids:
-        table = get_table(branch, tablerow, session=session)
-        tables.append(table)
-        column_ids = get_columns(branch, table[0], session=session)
-        for columnrow in column_ids:
-            column = get_column(branch, columnrow, session=session)
-            columns.append(column)
-    return tables, columns
-
-
 def check_conflicts(branch: Branch, session: Session):
-    tables, columns = get_all_tables_and_columns_in_branch(branch, session=session)
-    for row in tables:
-        table_id = row[0].id
-        main_table = None
-        try:
-            main_table = get_table(get_branch(1, session=session), table_id, session=session)
-        except TableDoesntExists:
-            pass
-        if main_table:
-            if main_table[1].create_ts > branch.create_ts:
-                raise BranchConflict(branch.id)
-    for row in columns:
-        column_id = row[0].id
-        main_column = None
-        try:
-            main_column = get_column(get_branch(1, session=session), column_id, session=session)
-        except ColumnDoesntExists:
-            pass
-        if main_column:
-            if main_column[1].create_ts > branch.create_ts:
-                raise BranchConflict(branch.id)
-    return True
+    pass
+    # tables, columns = get_all_tables_and_columns_in_branch(branch, session=session)
+    # for row in tables:
+    #     table_id = row[0].id
+    #     main_table = None
+    #     try:
+    #         main_table = get_table(get_branch(1, session=session), table_id, session=session)
+    #     except TableDoesntExists:
+    #         pass
+    #     if main_table:
+    #         if main_table[1].create_ts > branch.create_ts:
+    #             raise BranchConflict(branch.id)
+    # for row in columns:
+    #     column_id = row[0].id
+    #     main_column = None
+    #     try:
+    #         main_column = get_column(get_branch(1, session=session), column_id, session=session)
+    #     except ColumnDoesntExists:
+    #         pass
+    #     if main_column:
+    #         if main_column[1].create_ts > branch.create_ts:
+    #             raise BranchConflict(branch.id)
+    # return True
 
 
 def get_type_of_commit_object(commit: Commit, session: Session) -> str:
