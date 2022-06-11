@@ -158,29 +158,23 @@ def get_branch(id: int, *, session: Session) -> Branch:
 
 
 def check_conflicts(branch: Branch, session: Session):
-    pass
-    # tables, columns = get_all_tables_and_columns_in_branch(branch, session=session)
-    # for row in tables:
-    #     table_id = row[0].id
-    #     main_table = None
-    #     try:
-    #         main_table = get_table(get_branch(1, session=session), table_id, session=session)
-    #     except TableDoesntExists:
-    #         pass
-    #     if main_table:
-    #         if main_table[1].create_ts > branch.create_ts:
-    #             raise BranchConflict(branch.id)
-    # for row in columns:
-    #     column_id = row[0].id
-    #     main_column = None
-    #     try:
-    #         main_column = get_column(get_branch(1, session=session), column_id, session=session)
-    #     except ColumnDoesntExists:
-    #         pass
-    #     if main_column:
-    #         if main_column[1].create_ts > branch.create_ts:
-    #             raise BranchConflict(branch.id)
-    # return True
+    attrs = []
+    branch_begin_id = None
+    for row in branch.commits:
+        if row.attribute_id_in:
+            attrs.append(row.attribute_id_in)
+        if row.attribute_id_out:
+            attrs.append(row.attribute_id_out)
+        if row.attribute_id_in is None and row.attribute_id_out is None:
+            branch_begin_id = row.prev_commit
+    main_branch = get_branch(1, session=session)
+    unique_attrs = set(attrs)
+    for row in main_branch.commits:
+        if row.attribute_id_in in unique_attrs or row.attribute_id_out in unique_attrs:
+            raise MergeError(branch.id)
+        if row.id == branch_begin_id:
+            break
+    return True
 
 
 def get_type_of_commit_object(commit: Commit, session: Session) -> str:
