@@ -11,7 +11,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship, Session
 
 from .base import Base
-from ..methods import get_tables, get_table
+from dbengine.methods import get_tables, get_table
 from ..methods.column import get_columns, get_column
 
 

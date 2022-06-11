@@ -1,20 +1,17 @@
 import logging
 from typing import Tuple
 
-from sqlalchemy import and_
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session
 
-from dbengine.exceptions import BranchError, IncorrectBranchType, BranchNotFoundError, BranchConflict, \
-    TableDoesntExists, ColumnDoesntExists, MergeError
+from dbengine.exceptions import BranchError, IncorrectBranchType, BranchNotFoundError, MergeError
+from dbengine.methods.table import get_table
 from dbengine.models import Branch, BranchTypes, Commit, DbAttributes, DbTableAttributes
-from dbengine.methods.table import get_tables, get_table
-from dbengine.models.entity import AttributeTypes, DbColumnAttributes, DbColumn
-from dbengine.methods.column import get_columns, get_column
 from dbengine.models.branch import CommitActionTypes
-from dbengine.__init__ import test_connector, prod_connector
+from dbengine.models.entity import AttributeTypes, DbColumnAttributes, DbColumn
 
 logger = logging.getLogger(__name__)
+
 
 
 def create_main_branch(*, session: Session) -> Branch:
