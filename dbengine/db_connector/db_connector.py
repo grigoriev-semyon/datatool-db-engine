@@ -27,7 +27,6 @@ class IDbConnector(metaclass=ABCMeta):
         """Connect to DB and create self._connection Engine`"""
         try:
             self._engine = create_engine(self._connection_url, echo=True)
-            self._engine_db_dsn = create_engine(self._settings.DB_DSN, echo=True)
             self._connection = self._engine.connect()
         except SQLAlchemyError:
             logging.error(SQLAlchemyError, exc_info=True)

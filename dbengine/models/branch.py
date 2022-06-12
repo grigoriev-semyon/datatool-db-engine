@@ -8,11 +8,9 @@ from sqlalchemy import Column, DateTime
 from sqlalchemy import Enum as EnumDb
 from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import relationship, Session
+from sqlalchemy.orm import relationship
 
 from .base import Base
-from dbengine.methods import get_tables, get_table
-from ..methods.column import get_columns, get_column
 
 
 class BranchTypes(str, Enum):
@@ -51,22 +49,6 @@ class Branch(Base):
 
     def __repr__(self):
         return f"<Branch id={self.id} type={self.type}>"
-
-    def get_all_tables_and_columns_in_branch(self, session: Session):
-        table_ids = get_tables(self, session=session)
-        tables = []
-        columns = []
-        result = []
-        for tablerow in table_ids:
-            table = get_table(self, tablerow, session=session)
-            tables.append(table)
-            column_ids = get_columns(self, table[0], session=session)
-            for columnrow in column_ids:
-                column = get_column(self, columnrow, session=session)
-                columns.append(column)
-            result.append((table, tuple(columns)))
-            columns = []
-        return result
 
 
 class Commit(Base):

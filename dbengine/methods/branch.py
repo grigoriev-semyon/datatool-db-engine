@@ -5,13 +5,13 @@ from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session
 
 from dbengine.exceptions import BranchError, IncorrectBranchType, BranchNotFoundError, MergeError
-from dbengine.methods.table import get_table
+from dbengine.methods.column import get_columns, get_column
+from dbengine.methods.table import get_table, get_tables
 from dbengine.models import Branch, BranchTypes, Commit, DbAttributes, DbTableAttributes
 from dbengine.models.branch import CommitActionTypes
 from dbengine.models.entity import AttributeTypes, DbColumnAttributes, DbColumn
 
 logger = logging.getLogger(__name__)
-
 
 
 def create_main_branch(*, session: Session) -> Branch:
@@ -51,13 +51,14 @@ def create_branch(name, *, session: Session) -> Branch:
     return new_branch
 
 
-def request_merge_branch(branch: Branch, *, session: Session) -> Branch:
+def request_merge_branch(branch: Branch, *, session: Session, test_connector) -> Branch:
     """Поменять тип ветки на MR
 
     Только если сейчас WIP
     """
-    if branch.type != BranchTypes.WIP and not check_conflicts(branch, session=session):
+    if branch.type != BranchTypes.WIP:
         raise IncorrectBranchType("request merge", "main")
+    check_conflicts(branch, session=session)
     commits = []
     done_commits = []
     test_connector.generate_migration(branch)
@@ -99,13 +100,14 @@ def unrequest_merge_branch(branch: Branch, *, session: Session) -> Branch:
     return branch
 
 
-def ok_branch(branch: Branch, *, session: Session) -> Branch:
+def ok_branch(branch: Branch, *, session: Session, prod_connector) -> Branch:
     """Поменять тип ветки на MERGED
 
     Только если сейчас MR
     """
-    if branch.type != BranchTypes.MR and not check_conflicts(branch, session=session):
+    if branch.type != BranchTypes.MR:
         raise IncorrectBranchType("Confirm merge", branch.name)
+    check_conflicts(branch, session=session)
     commits = []
     done_commits = []
     prod_connector.generate_migration(branch)
@@ -148,7 +150,7 @@ def ok_branch(branch: Branch, *, session: Session) -> Branch:
 def get_branch(id: int, *, session: Session) -> Branch:
     """Return branch by id or name"""
     logger.debug("get_branch")
-    result = session.query(Branch).get(id)
+    result = session.query(Branch).filter(Branch.id == id).one()
     if not result:
         raise BranchNotFoundError(id)
     return result
@@ -221,3 +223,20 @@ def get_names_column_in_commit(commit: Commit, session: Session) -> Tuple:
                 find_table_id = session.query(DbColumn).filter(DbColumn.id == s.column_id).one().table_id
                 tablename = get_table(branch, find_table_id, commit, session=session)[1].name
     return tablename, name1, datatype1, name2, datatype2
+
+
+def get_all_tables_and_columns_in_branch(branch: Branch, session: Session):
+    table_ids = get_tables(branch, session=session)
+    tables = []
+    columns = []
+    result = []
+    for tablerow in table_ids:
+        table = get_table(branch, tablerow, session=session)
+        tables.append(table)
+        column_ids = get_columns(branch, table[0], session=session)
+        for columnrow in column_ids:
+            column = get_column(branch, columnrow, session=session)
+            columns.append(column)
+        result.append((table, tuple(columns)))
+        columns = []
+    return result
