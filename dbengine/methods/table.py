@@ -43,17 +43,10 @@ def get_table(branch: Branch, id: int, start_from_commit: Optional[Commit] = Non
     """Return table and last attributes in branch by id"""
     logging.debug("get_table")
     try:
-        if not start_from_commit:
-            commit_in_branch = (
-                session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()
-            )
-        else:
-            commit_in_branch = (
-                session.query(Commit)
-                    .filter(and_(Commit.branch_id == branch.id, Commit.id == start_from_commit.id))
-                    .order_by(Commit.id.desc())
-                    .first()
-            )
+        commit_in_branch = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc())
+        if start_from_commit:
+            commit_in_branch = commit_in_branch.filter(Commit.id == start_from_commit.id)
+        commit_in_branch = commit_in_branch.first()
         prev_commit = commit_in_branch.prev_commit_id
         while True:
             attr_out, attr_in = commit_in_branch.attribute_id_out, commit_in_branch.attribute_id_in
