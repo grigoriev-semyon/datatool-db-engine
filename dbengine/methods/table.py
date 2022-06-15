@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session
 
 from dbengine.exceptions import ProhibitedActionInBranch, TableDeleted, TableDoesntExists
 from dbengine.models import AttributeTypes, Branch, BranchTypes, Commit, DbColumn, DbTable, DbTableAttributes
-
 from .column import create_column, delete_column
 
 logger = logging.getLogger(__name__)

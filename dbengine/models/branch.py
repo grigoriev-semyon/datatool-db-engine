@@ -10,6 +10,7 @@ from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
+from . import DbAttributes
 from .base import Base
 
 
@@ -61,6 +62,9 @@ class Commit(Base):
     create_ts = Column(DateTime, default=datetime.utcnow, nullable=False)
     sql_up = Column(String)
     sql_down = Column(String)
+
+    attribute_out: DbAttributes = relationship("DbAttributes", foreign_keys=[attribute_id_out])
+    attribute_in: DbAttributes = relationship("DbAttributes", foreign_keys=[attribute_id_in])
 
     next_commit: List[Commit]
     prev_commit: Commit = relationship("Commit", foreign_keys=[prev_commit_id], backref="next_commit", remote_side=id)
