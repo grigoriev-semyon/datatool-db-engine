@@ -166,6 +166,8 @@ def check_conflicts(branch: Branch, session: Session):
             attrs.append(row.attribute_id_out)
         if row.attribute_id_in is None and row.attribute_id_out is None:
             branch_begin_id = row.prev_commit
+        if row.prev_commit.branch_id == 1:
+            break
     main_branch = get_branch(1, session=session)
     unique_attrs = set(attrs)
     for row in main_branch.commits:
