@@ -3,7 +3,7 @@ from abc import ABCMeta, abstractmethod
 
 from fastapi_sqlalchemy import db
 from pydantic import AnyUrl
-from sqlalchemy.engine import Engine, create_engine
+from sqlalchemy.engine import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.future import Connection
 
@@ -15,23 +15,32 @@ from dbengine.settings import Settings
 
 
 class IDbConnector(metaclass=ABCMeta):
+    """
+    Fields:
+    __coordinated_connection: Connection
+        Connection to the coordinated database
+    __coordinated_connection_url: AnyURL
+        URL coordinated database
+    __coordination_session:: Session()
+        Session with coordinating database
+    __settings: Settings
+        env fields
+    """
     __settings: Settings = Settings()
-    __engine_db_dsn: Engine = None
-    __engine: Engine = None
-    __connection: Connection = None
-    __connection_url: AnyUrl = None
-    __session = db.session
+    __coordinated_connection: Connection = None
+    __coordinated_connection_url: AnyUrl = None
+    __coordination_session = db.session
 
     def connect(self):
         """Connect to DB and create self._connection Engine`"""
         try:
-            self.__engine = create_engine(self.__connection_url, echo=True)
-            self.__connection = self.__engine.connect()
+            engine = create_engine(self.__coordinated_connection_url, echo=True)
+            self.__coordinated_connection = engine.connect()
         except SQLAlchemyError:
             logging.error(SQLAlchemyError, exc_info=True)
 
     def __init__(self, connection_url: AnyUrl):
-        self.__connection_url = connection_url
+        self.__coordinated_connection_url = connection_url
 
     @staticmethod
     @abstractmethod
@@ -87,12 +96,12 @@ class IDbConnector(metaclass=ABCMeta):
         """
         s = branch.commits
         for row in s:
-            object_type = get_type_of_commit_object(row, session=self.__session)
+            object_type = get_type_of_commit_object(row, session=self.__coordination_session)
             action_type = get_action_of_commit(row)
             if object_type == AttributeTypes.TABLE:
-                name1, name2 = get_names_table_in_commit(row, session=self.__session)
+                name1, name2 = get_names_table_in_commit(row, session=self.__coordination_session)
             elif object_type == AttributeTypes.COLUMN:
-                tablename, name1, datatype1, name2, datatype2 = get_names_column_in_commit(row, session=self.__session)
+                tablename, name1, datatype1, name2, datatype2 = get_names_column_in_commit(row, session=self.__coordination_session)
             if object_type == AttributeTypes.TABLE:
                 if action_type == CommitActionTypes.CREATE and name1 is None and name2 is not None:
                     row.sql_up = self._create_table(name2)
@@ -113,11 +122,11 @@ class IDbConnector(metaclass=ABCMeta):
                 if action_type == CommitActionTypes.DROP and name1 is not None and name2 is None and datatype1 is not None and datatype2 is None and tablename is not None:
                     row.sql_up = self._delete_column(tablename, name1)
                     row.sql_down = self._create_column(tablename, name1, datatype1)
-        self.__session.flush()
+        self.__coordination_session.flush()
 
     def execute(self, str: str):
         """Execute Sql code"""
-        self.__connection.execute(str)
+        self.__coordinated_connection.execute(str)
 
 
 class PostgreConnector(IDbConnector):
