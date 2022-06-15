@@ -32,7 +32,9 @@ class IDbConnector(metaclass=ABCMeta):
     __coordination_session = db.session
 
     def connect(self):
-        """Connect to DB and create self._connection Engine`"""
+        """
+        Connect to coordinated database
+        """
         try:
             engine = create_engine(self.__coordinated_connection_url, echo=True)
             self.__coordinated_connection = engine.connect()
@@ -125,7 +127,9 @@ class IDbConnector(metaclass=ABCMeta):
         self.__coordination_session.flush()
 
     def execute(self, str: str):
-        """Execute Sql code"""
+        """
+        Execute Sql code
+        """
         self.__coordinated_connection.execute(str)
 
 
