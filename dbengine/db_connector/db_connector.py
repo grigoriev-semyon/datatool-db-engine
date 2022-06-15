@@ -97,28 +97,23 @@ class IDbConnector(metaclass=ABCMeta):
                 if action_type == CommitActionTypes.CREATE and name1 is None and name2 is not None:
                     row.sql_up = self._create_table(name2)
                     row.sql_down = self._delete_table(name2)
-                    self.__session.flush()
                 elif action_type == CommitActionTypes.ALTER and name1 is not None and name2 is not None:
                     row.sql_up = self._alter_table(name1, name2)
                     row.sql_down = self._alter_table(name2, name1)
-                    self.__session.flush()
                 elif action_type == CommitActionTypes.DROP and name1 is not None and name2 is None:
                     row.sql_up = self._delete_table(name1)
                     row.sql_down = self._create_table(name1)
-                    self.__session.flush()
             elif object_type == AttributeTypes.COLUMN:
                 if action_type == CommitActionTypes.CREATE and name1 is None and datatype1 is None and name2 is not None and datatype2 is not None and tablename is not None:
                     row.sql_up = self._create_column(tablename, name2, datatype2)
                     row.sql_down = self._delete_column(tablename, name2)
-                    self.__session.flush()
                 if action_type == CommitActionTypes.ALTER and name1 is not None and datatype1 is not None and name2 is not None and datatype2 is not None and tablename is not None:
                     row.sql_up = self._alter_column(tablename, name1, name2, datatype1, datatype2)
                     row.sql_down = self._alter_column(tablename, name2, name1, datatype2, datatype1)
-                    self.__session.flush()
                 if action_type == CommitActionTypes.DROP and name1 is not None and name2 is None and datatype1 is not None and datatype2 is None and tablename is not None:
                     row.sql_up = self._delete_column(tablename, name1)
                     row.sql_down = self._create_column(tablename, name1, datatype1)
-                    self.__session.flush()
+        self.__session.flush()
 
     def execute(self, str: str):
         """Execute Sql code"""
