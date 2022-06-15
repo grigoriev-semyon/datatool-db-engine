@@ -89,11 +89,6 @@ class IDbConnector(metaclass=ABCMeta):
         for row in s:
             object_type = get_type_of_commit_object(row, session=self.__session)
             action_type = get_action_of_commit(row)
-            name1 = None
-            name2 = None
-            datatype1 = None
-            datatype2 = None
-            tablename = None
             if object_type == AttributeTypes.TABLE:
                 name1, name2 = get_names_table_in_commit(row, session=self.__session)
             elif object_type == AttributeTypes.COLUMN:
