@@ -7,6 +7,7 @@ from fastapi_sqlalchemy import db
 from dbengine.exceptions import BranchError, BranchNotFoundError
 from dbengine.methods import create_branch, get_branch, ok_branch, request_merge_branch, unrequest_merge_branch
 from dbengine.models import BranchTypes
+import dbengine.models
 from dbengine.routes.models import Branch
 
 branch_router = APIRouter(prefix="/branch", tags=["Branch"])
