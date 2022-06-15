@@ -1,11 +1,11 @@
 import logging
 from abc import ABCMeta, abstractmethod
 
+from fastapi_sqlalchemy import db
 from pydantic import AnyUrl
 from sqlalchemy.engine import Engine, create_engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.future import Connection
-from sqlalchemy.orm import Session
 
 from dbengine.methods.branch import get_action_of_commit, get_type_of_commit_object, get_names_table_in_commit, \
     get_names_column_in_commit
@@ -15,59 +15,71 @@ from dbengine.settings import Settings
 
 
 class IDbConnector(metaclass=ABCMeta):
-    _settings: Settings = Settings()
-    _engine_db_dsn: Engine = None
-    _engine: Engine = None
-    _connection: Connection = None
-    _connection_url: AnyUrl = None
-    _session = None
-    _Session = None
+    __settings: Settings = Settings()
+    __engine_db_dsn: Engine = None
+    __engine: Engine = None
+    __connection: Connection = None
+    __connection_url: AnyUrl = None
+    __session = db.session
 
-    def _connect(self):
+    def connect(self):
         """Connect to DB and create self._connection Engine`"""
         try:
-            self._engine = create_engine(self._connection_url, echo=True)
-            self._connection = self._engine.connect()
+            self.__engine = create_engine(self.__connection_url, echo=True)
+            self.__connection = self.__engine.connect()
         except SQLAlchemyError:
             logging.error(SQLAlchemyError, exc_info=True)
 
-    def get_session(self):
-        return self._session
-
-    def __init__(self, session: Session, connection_url: AnyUrl):
-        self._session = session
-        self._connection_url = connection_url
-        self._connect()
+    def __init__(self, connection_url: AnyUrl):
+        self.__connection_url = connection_url
 
     @staticmethod
     @abstractmethod
-    def _create_table(tablename: str):
-        pass
+    def _create_table(tablename: str) -> str:
+        """
+        Generate query code to create table
+        """
+        raise NotImplementedError
 
     @staticmethod
     @abstractmethod
-    def _create_column(tablename: str, columnname: str, columntype: str):
-        pass
+    def _create_column(tablename: str, columnname: str, columntype: str) -> str:
+        """
+        Generate query code to create column
+        """
+        raise NotImplementedError
 
     @staticmethod
     @abstractmethod
-    def _delete_column(tablename: str, columnname: str):
-        pass
+    def _delete_column(tablename: str, columnname: str) -> str:
+        """
+        Generate query code to delete column
+        """
+        raise NotImplementedError
 
     @staticmethod
     @abstractmethod
-    def _delete_table(tablename: str):
-        pass
+    def _delete_table(tablename: str) -> str:
+        """
+        Generate query code to delete table
+        """
+        raise NotImplementedError
 
     @staticmethod
     @abstractmethod
-    def _alter_table(tablename: str, new_tablename: str):
-        pass
+    def _alter_table(tablename: str, new_tablename: str) -> str:
+        """
+        Generate query code to alter table
+        """
+        raise NotImplementedError
 
     @staticmethod
     @abstractmethod
-    def _alter_column(tablename: str, columnname: str, new_name: str, datatype: str, new_datatype: str):
-        pass
+    def _alter_column(tablename: str, columnname: str, new_name: str, datatype: str, new_datatype: str) -> str:
+        """
+        Generate query code to alter column
+        """
+        raise NotImplementedError
 
     def generate_migration(self, branch: Branch):
         """
@@ -75,7 +87,7 @@ class IDbConnector(metaclass=ABCMeta):
         """
         s = branch.commits
         for row in s:
-            object_type = get_type_of_commit_object(row, session=self._session)
+            object_type = get_type_of_commit_object(row, session=self.__session)
             action_type = get_action_of_commit(row)
             name1 = None
             name2 = None
@@ -83,39 +95,39 @@ class IDbConnector(metaclass=ABCMeta):
             datatype2 = None
             tablename = None
             if object_type == AttributeTypes.TABLE:
-                name1, name2 = get_names_table_in_commit(row, session=self._session)
+                name1, name2 = get_names_table_in_commit(row, session=self.__session)
             elif object_type == AttributeTypes.COLUMN:
-                tablename, name1, datatype1, name2, datatype2 = get_names_column_in_commit(row, session=self._session)
+                tablename, name1, datatype1, name2, datatype2 = get_names_column_in_commit(row, session=self.__session)
             if object_type == AttributeTypes.TABLE:
                 if action_type == CommitActionTypes.CREATE and name1 is None and name2 is not None:
                     row.sql_up = self._create_table(name2)
                     row.sql_down = self._delete_table(name2)
-                    self._session.flush()
+                    self.__session.flush()
                 elif action_type == CommitActionTypes.ALTER and name1 is not None and name2 is not None:
                     row.sql_up = self._alter_table(name1, name2)
                     row.sql_down = self._alter_table(name2, name1)
-                    self._session.flush()
+                    self.__session.flush()
                 elif action_type == CommitActionTypes.DROP and name1 is not None and name2 is None:
                     row.sql_up = self._delete_table(name1)
                     row.sql_down = self._create_table(name1)
-                    self._session.flush()
+                    self.__session.flush()
             elif object_type == AttributeTypes.COLUMN:
                 if action_type == CommitActionTypes.CREATE and name1 is None and datatype1 is None and name2 is not None and datatype2 is not None and tablename is not None:
                     row.sql_up = self._create_column(tablename, name2, datatype2)
                     row.sql_down = self._delete_column(tablename, name2)
-                    self._session.flush()
+                    self.__session.flush()
                 if action_type == CommitActionTypes.ALTER and name1 is not None and datatype1 is not None and name2 is not None and datatype2 is not None and tablename is not None:
                     row.sql_up = self._alter_column(tablename, name1, name2, datatype1, datatype2)
                     row.sql_down = self._alter_column(tablename, name2, name1, datatype2, datatype1)
-                    self._session.flush()
+                    self.__session.flush()
                 if action_type == CommitActionTypes.DROP and name1 is not None and name2 is None and datatype1 is not None and datatype2 is None and tablename is not None:
                     row.sql_up = self._delete_column(tablename, name1)
                     row.sql_down = self._create_column(tablename, name1, datatype1)
-                    self._session.flush()
+                    self.__session.flush()
 
     def execute(self, str: str):
         """Execute Sql code"""
-        self._connection.execute(str)
+        self.__connection.execute(str)
 
 
 class PostgreConnector(IDbConnector):
