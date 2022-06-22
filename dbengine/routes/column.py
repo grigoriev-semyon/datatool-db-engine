@@ -22,7 +22,7 @@ async def http_create_column(
     except BranchNotFoundError:
         raise HTTPException(status_code=404, detail="Branch not found")
     try:
-        table = get_table(branch, table_id, session=db.session)
+        table = get_table(branch, table_id)
     except TableDoesntExists as e:
         raise HTTPException(status_code=404, detail=e)
     except TableDeleted as e:
@@ -79,7 +79,7 @@ async def http_get_columns_in_branch(branch_id: int, table_id: int):
     except BranchNotFoundError:
         raise HTTPException(status_code=404, detail="Branch not found")
     try:
-        table = get_table(branch, table_id, session=db.session)[0]
+        table = get_table(branch, table_id)[0]
     except TableDoesntExists as e:
         raise HTTPException(status_code=404, detail=e)
     except TableDeleted as e:

@@ -47,7 +47,11 @@ class DbAttributes(Base):
     type = Column(String)
     create_ts = Column(DateTime, nullable=False, default=datetime.utcnow)
 
-    __mapper_args__ = {"polymorphic_identity": type}
+    __mapper_args__ = {
+        'polymorphic_identity': 'DbAttributes',
+        'polymorphic_on': type,
+        'with_polymorphic': '*'
+    }
 
 
 class DbTableAttributes(DbAttributes):
@@ -55,7 +59,8 @@ class DbTableAttributes(DbAttributes):
     table_id = Column(Integer, ForeignKey("db_table.id"))
     name = Column(String)
 
-    __mapper_args__ = {"polymorphic_identity": AttributeTypes.TABLE}
+    __mapper_args__ = {"polymorphic_identity": AttributeTypes.TABLE,
+                       'polymorphic_load': 'inline'}
     table: DbTable = relationship('DbTable', foreign_keys=[table_id])
 
 
@@ -65,5 +70,6 @@ class DbColumnAttributes(DbAttributes):
     name = Column(String, nullable=False)
     datatype = Column(String, nullable=False)
 
-    __mapper_args__ = {"polymorphic_identity": AttributeTypes.COLUMN}
+    __mapper_args__ = {"polymorphic_identity": AttributeTypes.COLUMN,
+                       'polymorphic_load': 'inline'}
     column: DbColumn = relationship('DbColumn', foreign_keys=[column_id])

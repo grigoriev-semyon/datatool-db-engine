@@ -10,7 +10,7 @@ from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
-from . import DbAttributes
+from dbengine.models.entity import DbAttributes
 from .base import Base
 
 

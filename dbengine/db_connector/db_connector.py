@@ -6,6 +6,7 @@ from pydantic import AnyUrl
 from sqlalchemy.engine import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.future import Connection
+from sqlalchemy.orm import Session
 
 from dbengine.methods.branch import get_action_of_commit, get_type_of_commit_object, get_names_table_in_commit, \
     get_names_column_in_commit
@@ -29,7 +30,7 @@ class IDbConnector(metaclass=ABCMeta):
     __settings: Settings = Settings()
     __coordinated_connection: Connection = None
     __coordinated_connection_url: AnyUrl = None
-    __coordination_session = db.session
+    # __coordination_session = db.session
 
     def connect(self):
         """
@@ -92,18 +93,18 @@ class IDbConnector(metaclass=ABCMeta):
         """
         raise NotImplementedError
 
-    def generate_migration(self, branch: Branch):
+    def generate_migration(self, branch: Branch, session: Session):
         """
         Generates SQL Code for migration any DataBase
         """
         s = branch.commits
         for row in s:
-            object_type = get_type_of_commit_object(row, session=self.__coordination_session)
+            object_type = get_type_of_commit_object(row)
             action_type = get_action_of_commit(row)
             if object_type == AttributeTypes.TABLE:
-                name1, name2 = get_names_table_in_commit(row, session=self.__coordination_session)
+                name1, name2 = get_names_table_in_commit(row)
             elif object_type == AttributeTypes.COLUMN:
-                tablename, name1, datatype1, name2, datatype2 = get_names_column_in_commit(row, session=self.__coordination_session)
+                tablename, name1, datatype1, name2, datatype2 = get_names_column_in_commit(row)
             if object_type == AttributeTypes.TABLE:
                 if action_type == CommitActionTypes.CREATE and name1 is None and name2 is not None:
                     row.sql_up = self._create_table(name2)
@@ -124,13 +125,14 @@ class IDbConnector(metaclass=ABCMeta):
                 if action_type == CommitActionTypes.DROP and name1 is not None and name2 is None and datatype1 is not None and datatype2 is None and tablename is not None:
                     row.sql_up = self._delete_column(tablename, name1)
                     row.sql_down = self._create_column(tablename, name1, datatype1)
-        self.__coordination_session.flush()
+        session.flush()
 
     def execute(self, str: str):
         """
         Execute Sql code
         """
-        self.__coordinated_connection.execute(str)
+        for line in str.splitlines():
+            self.__coordinated_connection.execute(line)
 
 
 class PostgreConnector(IDbConnector):
@@ -156,10 +158,7 @@ class PostgreConnector(IDbConnector):
 
     @staticmethod
     def _alter_column(tablename: str, columnname: str, new_name: str, datatype: str, new_datatype: str):
-        tmp_columnname = f"tmp_{columnname}"
         n1 = " \n"
-        first_query = f"ALTER TABLE {tablename} RENAME COLUMN {new_name} TO {tmp_columnname}".join(n1).lstrip()
-        second_query = f"ALTER TABLE {tablename} ADD {new_name} AS ({tmp_columnname} as {new_datatype})".join(
-            n1).lstrip()
-        third_query = f"ALTER TABLE {tablename} DROP COLUMN {tmp_columnname};"
-        return f"{first_query}{second_query}{third_query}"
+        first_query = f"ALTER TABLE {tablename} RENAME COLUMN {columnname} TO {new_name}".join(n1).lstrip()
+        second_query = f"ALTER TABLE {tablename} ALTER COLUMN {new_name} TYPE {new_datatype} USING {new_name}::{new_datatype}"
+        return f"{first_query}{second_query}"

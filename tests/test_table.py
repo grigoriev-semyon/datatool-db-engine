@@ -42,7 +42,7 @@ def test_table_get():
 
     # Тут должно падать потому, что ветка была сделана в момент до того, как колонка была создана
     with pytest.raises(TableDoesntExists):
-        get_table(branch2, table_id, session=session)
+        get_table(branch2, table_id)
 
     usession = Session()
     ubranch = create_branch("Test Table 2", session=usession)
@@ -123,7 +123,7 @@ def test_table_delete():
     assert ucommit.attribute_id_out is None
 
     with pytest.raises(TableDeleted):
-        get_table(branch, table.id, session=session)
+        get_table(branch, table.id)
 
     with pytest.raises(ColumnDeleted):
         get_column(branch, col_1.id, session=session)
