@@ -1,17 +1,14 @@
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import Optional
 
-from fastapi_sqlalchemy import db
 from pydantic import AnyUrl
 from sqlalchemy.engine import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.future import Connection
-from sqlalchemy.orm import Session
 
 from dbengine.methods.branch import get_action_of_commit, get_type_of_commit_object, get_names_table_in_commit, \
     get_names_column_in_commit
-from dbengine.models.branch import Branch, CommitActionTypes, Commit
+from dbengine.models.branch import Branch, CommitActionTypes
 from dbengine.models.entity import AttributeTypes
 from dbengine.settings import Settings
 
