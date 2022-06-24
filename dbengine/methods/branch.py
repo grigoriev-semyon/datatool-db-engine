@@ -59,11 +59,9 @@ def request_merge_branch(branch: Branch, *, session: Session, test_connector) ->
     if branch.type != BranchTypes.WIP:
         raise IncorrectBranchType("request merge", "main")
     check_conflicts(branch, session=session)
-    commits = []
-    lines_up, lines_down = [], []
-    test_connector.generate_migration(branch, session=session)
+    commits, lines_up, lines_down, rollback = [], [], [], []
+    test_connector.generate_migration(branch)
     session.flush()
-    rollback = []
     for row in branch.commits:
         if row.sql_up is not None and row.sql_down is not None:
             commits.append(row)
@@ -123,7 +121,7 @@ def ok_branch(branch: Branch, *, session: Session, test_connector, prod_connecto
     commits = []
     rollback = []
     lines_up, lines_down = [], []
-    prod_connector.generate_migration(branch, session=session)
+    prod_connector.generate_migration(branch)
     session.flush()
     for row in branch.commits:
         if row.sql_up is not None and row.sql_down is not None:

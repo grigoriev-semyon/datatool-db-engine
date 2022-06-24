@@ -95,7 +95,7 @@ class IDbConnector(metaclass=ABCMeta):
         """
         raise NotImplementedError
 
-    def generate_migration(self, branch: Branch, session: Session):
+    def generate_migration(self, branch: Branch):
         """
         Generates SQL Code for migration any DataBase
         """
