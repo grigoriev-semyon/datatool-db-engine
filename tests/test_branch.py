@@ -5,6 +5,7 @@ from dbengine.methods import *
 from dbengine.exceptions import BranchError
 from dbengine.models import BranchTypes
 from dbengine.models.branch import Commit
+from . import test_connector, prod_connector
 
 from . import Session
 
@@ -24,12 +25,12 @@ def test_branch_ok():
     assert branch.type == BranchTypes.WIP
     create_table(branch, "Test Branch 1", session=session)
 
-    request_merge_branch(branch, session=session)
+    request_merge_branch(branch, session=session, test_connector=test_connector)
     assert branch.type == BranchTypes.MR
     with pytest.raises(BranchError):
         create_table(branch, "Test Branch 1", session=session)
 
-    ok_branch(branch, session=session)
+    ok_branch(branch, session=session, test_connector=test_connector, prod_connector=prod_connector)
     with pytest.raises(BranchError):
         create_table(branch, "Test Branch 1", session=session)
 
@@ -43,7 +44,7 @@ def test_branch_mr():
     assert branch.type == BranchTypes.WIP
     create_table(branch, "Test Branch 2", session=session)
 
-    request_merge_branch(branch, session=session)
+    request_merge_branch(branch, session=session, test_connector=test_connector)
     with pytest.raises(BranchError):
         create_table(branch, "Test Branch 2", session=session)
     assert branch.type == BranchTypes.MR

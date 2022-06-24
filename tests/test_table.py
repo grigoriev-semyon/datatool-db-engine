@@ -3,6 +3,7 @@ import pytest
 from dbengine.methods import *
 from dbengine.exceptions import TableDoesntExists, ColumnDoesntExists, ColumnDeleted, TableDeleted
 from . import Session
+from . import test_connector, prod_connector
 
 
 def test_create():
@@ -33,8 +34,8 @@ def test_table_get():
     branch2 = create_branch("Test Table 3", session=session)
     table, attrs, _ = create_table(branch, "test_table_1", session=session)
     create_column(branch, table, name="id", datatype="string", session=session)
-    request_merge_branch(branch, session=session)
-    ok_branch(branch, session=session)
+    request_merge_branch(branch, session=session, test_connector=test_connector)
+    ok_branch(branch, session=session, test_connector=test_connector, prod_connector=prod_connector)
     table_id = table.id
     attrs_id = attrs.id
     attrs_table_id = attrs.table_id
@@ -47,7 +48,7 @@ def test_table_get():
     usession = Session()
     ubranch = create_branch("Test Table 2", session=usession)
     # FIXME: В ветке не существует таблицы. Но эта таблица существует в main ветке и которая бранчуется позже
-    utable, uattrs = get_table(ubranch, table_id, session=usession)
+    utable, uattrs = get_table(ubranch, table_id)
 
     assert table_id == utable.id
     assert attrs_id == uattrs.id, "Commit in branch and in main are different"
@@ -61,8 +62,8 @@ def test_column_get():
     branch2 = create_branch("Test Table 3", session=session)
     table, _, _ = create_table(branch, "test_table_1", session=session)
     col, attrs, _ = create_column(branch, table, name="id", datatype="VARCHAR(256)", session=session)
-    request_merge_branch(branch, session=session)
-    ok_branch(branch, session=session)
+    request_merge_branch(branch, session=session, test_connector=test_connector)
+    ok_branch(branch, session=session, test_connector=test_connector, prod_connector=prod_connector)
     col_id = col.id
     attrs_id = attrs.id
     attrs_column_id = attrs.column_id
