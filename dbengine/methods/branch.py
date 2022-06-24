@@ -60,24 +60,34 @@ def request_merge_branch(branch: Branch, *, session: Session, test_connector) ->
         raise IncorrectBranchType("request merge", "main")
     check_conflicts(branch, session=session)
     commits = []
-    done_commits = []
+    lines_up, lines_down = [], []
     test_connector.generate_migration(branch, session=session)
+    session.flush()
+    rollback = []
     for row in branch.commits:
         if row.sql_up is not None and row.sql_down is not None:
             commits.append(row)
         if row.prev_commit.branch_id == 1:
             break
-    for row in commits.__reversed__():
-        try:
-            test_connector.execute(row.sql_up)
-            done_commits.append(row)
-        except DBAPIError:
-            for s in done_commits.__reversed__():
-                test_connector.execute(s.sql_down)
-            raise MergeError(branch.id)
     for row in commits:
+        for line in reversed(row.sql_up.splitlines()):
+            lines_up.append(line)
+        for line in reversed(row.sql_down.splitlines()):
+            lines_down.append(line)
+    i = 0
+    lines_down.reverse()
+    for row in lines_up.__reversed__():
         try:
-            test_connector.execute(row.sql_down)
+            test_connector.execute(row)
+            rollback.append(lines_down[i])
+            i += 1
+        except DBAPIError:
+            for s in rollback.__reversed__():
+                test_connector.execute(s)
+            raise MergeError(branch.id)
+    for row in rollback.__reversed__():
+        try:
+            test_connector.execute(row)
         except DBAPIError:
             raise MergeError
     branch.type = BranchTypes.MR
@@ -111,29 +121,40 @@ def ok_branch(branch: Branch, *, session: Session, test_connector, prod_connecto
         raise IncorrectBranchType("Confirm merge", branch.name)
     check_conflicts(branch, session=session)
     commits = []
-    done_commits = []
+    rollback = []
+    lines_up, lines_down = [], []
     prod_connector.generate_migration(branch, session=session)
+    session.flush()
     for row in branch.commits:
         if row.sql_up is not None and row.sql_down is not None:
             commits.append(row)
         if row.prev_commit.branch_id == 1:
             break
-    for row in commits.__reversed__():
+    for row in commits:
+        for line in reversed(row.sql_up.splitlines()):
+            lines_up.append(line)
+        for line in reversed(row.sql_down.splitlines()):
+            lines_down.append(line)
+    i = 0
+    lines_down.reverse()
+    for row in lines_up.__reversed__():
         try:
-            test_connector.execute(row.sql_up)
-            done_commits.append(row)
+            test_connector.execute(row)
+            rollback.append(lines_down[i])
+            i += 1
         except DBAPIError:
-            for s in done_commits.__reversed__():
-                test_connector.execute(s.sql_down)
+            for s in rollback.__reversed__():
+                test_connector.execute(s)
             raise MergeError(branch.id)
-    done_commits = []
-    for row in commits.__reversed__():
+    rollback = []
+    i = 0
+    for row in lines_up.__reversed__():
         try:
-            prod_connector.execute(row.sql_up)
-            done_commits.append(row)
+            prod_connector.execute(row)
+            rollback.append(lines_down[i])
         except DBAPIError:
-            for s in done_commits.__reversed__():
-                prod_connector.execute(s.sql_down)
+            for s in rollback.__reversed__():
+                prod_connector.execute(s)
             raise MergeError(branch.id)
     branch.type = BranchTypes.MERGED
     session.query(Branch).filter(Branch.id == branch.id).update({"type": BranchTypes.MERGED})
@@ -237,7 +258,7 @@ def get_names_column_in_commit(commit: Commit) -> Tuple:
     tablename, name1, name2, datatype1, datatype2 = None, None, None, None, None
     if get_type_of_commit_object(commit) == AttributeTypes.COLUMN:
         if attr_in is not None:
-            name1, datatype1= attr_in.name, attr_in.datatype
+            name1, datatype1 = attr_in.name, attr_in.datatype
             tablename = get_table(commit.branch, attr_in.column.table_id, commit)[1].name
         if attr_out is not None:
             name2, datatype2 = attr_out.name, attr_out.datatype
