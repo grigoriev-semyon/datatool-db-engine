@@ -70,7 +70,7 @@ def request_merge_branch(branch: Branch, *, session: Session, test_connector) ->
     for row in commits:
         for line in reversed(row.sql_up.splitlines()):
             lines_up.append(line)
-        for line in reversed(row.sql_down.splitlines()):
+        for line in (row.sql_down.splitlines()):
             lines_down.append(line)
     i = 0
     lines_down.reverse()
@@ -129,7 +129,7 @@ def ok_branch(branch: Branch, *, session: Session, test_connector, prod_connecto
     for row in commits:
         for line in reversed(row.sql_up.splitlines()):
             lines_up.append(line)
-        for line in reversed(row.sql_down.splitlines()):
+        for line in (row.sql_down.splitlines()):
             lines_down.append(line)
     i = 0
     lines_down.reverse()
