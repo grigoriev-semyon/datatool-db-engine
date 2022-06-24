@@ -118,9 +118,7 @@ def ok_branch(branch: Branch, *, session: Session, test_connector, prod_connecto
     if branch.type != BranchTypes.MR:
         raise IncorrectBranchType("Confirm merge", branch.name)
     check_conflicts(branch, session=session)
-    commits = []
-    rollback = []
-    lines_up, lines_down = [], []
+    commits, lines_up, lines_down, rollback = [], [], [], []
     prod_connector.generate_migration(branch)
     session.flush()
     for row in branch.commits:
