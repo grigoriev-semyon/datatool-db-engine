@@ -33,7 +33,7 @@ def test_table_get():
     branch = create_branch("Test Table 1", session=session)
     branch2 = create_branch("Test Table 3", session=session)
     table, attrs, _ = create_table(branch, "test_table_1", session=session)
-    create_column(branch, table, name="id", datatype="string", session=session)
+    create_column(branch, table, name="id", datatype="VARCHAR(256)", session=session)
     request_merge_branch(branch, session=session, test_connector=test_connector)
     ok_branch(branch, session=session, test_connector=test_connector, prod_connector=prod_connector)
     table_id = table.id
@@ -60,7 +60,7 @@ def test_column_get():
     session = Session()
     branch = create_branch("Test Table 1", session=session)
     branch2 = create_branch("Test Table 3", session=session)
-    table, _, _ = create_table(branch, "test_table_1", session=session)
+    table, _, _ = create_table(branch, "test_table_2", session=session)
     col, attrs, _ = create_column(branch, table, name="id", datatype="VARCHAR(256)", session=session)
     request_merge_branch(branch, session=session, test_connector=test_connector)
     ok_branch(branch, session=session, test_connector=test_connector, prod_connector=prod_connector)
@@ -86,8 +86,8 @@ def test_column_get():
 
 def test_table_update():
     session = Session()
-    branch = create_branch("Test Table 1", session=session)
-    table, table_attr, _ = create_table(branch, "test_table_1", session=session)
+    branch = create_branch("Test Table 3", session=session)
+    table, table_attr, _ = create_table(branch, "test_table_3", session=session)
     create_column(branch, table, name="id", datatype="string", session=session)
     utable, utable_attr, utable_commit = update_table(branch, table, name="upd_test_table_1", session=session)
 
@@ -99,7 +99,7 @@ def test_table_update():
 def test_column_update():
     session = Session()
     branch = create_branch("Test Table 1", session=session)
-    table, _, _ = create_table(branch, "test_table_1", session=session)
+    table, _, _ = create_table(branch, "test_table_4", session=session)
     col_1, col_attr_1, _ = create_column(branch, table, name="id", datatype="string", session=session)
     ucol_1, ucol_attr_1, ucommit_1 = update_column(branch, col_1, name="uid", datatype="integer", session=session)
 
@@ -116,7 +116,7 @@ def test_column_update():
 def test_table_delete():
     session = Session()
     branch = create_branch("Test Table 1", session=session)
-    table, attrs, _ = create_table(branch, "test_table_1", session=session)
+    table, attrs, _ = create_table(branch, "test_table_5", session=session)
     col_1, _, _ = create_column(branch, table, name="id", datatype="string", session=session)
     ucommit = delete_table(branch, table, session=session)
 
@@ -133,7 +133,7 @@ def test_table_delete():
 def test_column_delete():
     session = Session()
     branch = create_branch("Test Table 1", session=session)
-    table, _, _ = create_table(branch, "test_table_1", session=session)
+    table, _, _ = create_table(branch, "test_table_6", session=session)
     col, attrs, _ = create_column(branch, table, name="id", datatype="string", session=session)
     ucommit = delete_column(branch, col, session=session)
 

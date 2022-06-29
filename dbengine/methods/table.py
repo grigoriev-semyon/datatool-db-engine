@@ -9,6 +9,7 @@ from dbengine.exceptions import ProhibitedActionInBranch, TableDeleted, TableDoe
 from dbengine.models import AttributeTypes, Branch, BranchTypes, Commit, DbColumn, DbTable, DbTableAttributes, \
     DbAttributes
 from .column import create_column, delete_column
+from dbengine.methods.converters import name_converter
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +21,7 @@ def create_table(
     logging.debug("create_table")
     if branch.type != BranchTypes.WIP:
         raise ProhibitedActionInBranch("Table creating", branch.name)
+    name = name_converter(name)
     s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()
     new_commit = Commit(branch_id=branch.id, attribute_id_in=None)
     if s:
@@ -78,6 +80,7 @@ def update_table(
     """Change name of table and commit to branch"""
     logging.debug("update_table")
     table_and_last_attributes = get_table(branch, table.id)
+    name = name_converter(name)
     if branch.type != BranchTypes.WIP:
         raise ProhibitedActionInBranch("Table altering", branch.name)
     s = (

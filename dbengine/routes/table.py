@@ -5,7 +5,7 @@ from fastapi_sqlalchemy import db
 
 from dbengine.exceptions import TableDoesntExists, TableDeleted, BranchNotFoundError, ProhibitedActionInBranch
 from dbengine.methods import create_table, delete_table, get_branch, get_table, get_tables, update_table
-from dbengine.methods.aggregators import table_aggregator
+from dbengine.methods.converters import table_aggregator
 from dbengine.routes.models import Table
 
 table_router = APIRouter(prefix="/table", tags=["Table"])

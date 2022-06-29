@@ -7,7 +7,7 @@ from fastapi_sqlalchemy import db
 from dbengine.exceptions import BranchNotFoundError, TableDoesntExists, TableDeleted, \
     ProhibitedActionInBranch
 from dbengine.methods import create_column, delete_column, get_branch, get_column, get_table, update_column
-from dbengine.methods.aggregators import column_aggregator
+from dbengine.methods.converters import column_aggregator
 from dbengine.methods.column import get_columns
 from dbengine.routes.models import Column
 
