@@ -40,60 +40,32 @@ def create_column(
     return new_column, new_column_attribute, new_commit
 
 
-def get_column(branch: Branch, id: int, *, session: Session) -> Tuple[DbColumn, DbColumnAttributes]:
-    """Get last version of column in table in branch"""
-    logging.debug('get_column')
-    try:
-        commit_in_branch = (
-            session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()
-        )
-        prev_commit = commit_in_branch.prev_commit_id
-        while True:
-            attr_out, attr_in = commit_in_branch.attribute_id_out, commit_in_branch.attribute_id_in
-            if attr_in is None and attr_out is None:
-                if not prev_commit:
+def get_column(branch: Branch, id: int, start_from_commit: Optional[Commit] = None) -> Tuple[DbColumn, DbColumnAttributes]:
+    commit = branch.last_commit
+    attr_out: DbColumnAttributes
+    if start_from_commit and start_from_commit in branch.commits:
+        commit = start_from_commit
+    while True:
+        attr_out, attr_in = commit.attribute_out, commit.attribute_in
+        if attr_in is None and attr_out is None:
+            if not commit.prev_commit:
+                raise ColumnDoesntExists(id, branch.name)
+            commit = commit.prev_commit
+        elif attr_in is not None and attr_out is None:
+            if attr_in and attr_in.type == AttributeTypes.COLUMN:
+                if attr_in.column_id == id:
+                    raise ColumnDeleted(id, branch.name)
+            else:
+                if not commit.prev_commit:
                     raise ColumnDoesntExists(id, branch.name)
-                commit_in_branch = (
-                    session.query(Commit)
-                    .filter(and_(Commit.id == prev_commit, or_(Commit.branch_id == 1, Commit.branch_id == branch.id)))
-                    .one_or_none()
-                )
-                prev_commit = commit_in_branch.prev_commit_id
-            elif attr_in is not None and attr_out is None:
-                s = session.query(DbColumnAttributes).filter(DbColumnAttributes.id == attr_in).one_or_none()
-                if s:
-                    if s.column_id == id:
-                        raise ColumnDeleted(id, branch.name)
-                else:
-                    if not prev_commit:
-                        raise ColumnDoesntExists(id, branch.name)
-                    commit_in_branch = (
-                        session.query(Commit)
-                        .filter(
-                            and_(Commit.id == prev_commit, or_(Commit.branch_id == 1, Commit.branch_id == branch.id))
-                        )
-                        .one_or_none()
+                commit = commit.prev_commit
+        elif (attr_in is not None and attr_out is not None) or (attr_in is None and attr_out is not None):
+            if attr_out and attr_out.type == AttributeTypes.COLUMN:
+                if attr_out.column_id == id:
+                    return (
+                        attr_out.column, attr_out
                     )
-                    prev_commit = commit_in_branch.prev_commit_id
-            elif (attr_in is not None and attr_out is not None) or (attr_in is None and attr_out is not None):
-                s = session.query(DbColumnAttributes).filter(DbColumnAttributes.id == attr_out).one_or_none()
-                if s:
-                    if s.column_id == id:
-                        return (
-                            session.query(DbColumn).filter(DbColumn.id == id).one(),
-                            session.query(DbColumnAttributes)
-                            .filter(and_(DbColumnAttributes.column_id == id, DbColumnAttributes.id == attr_out))
-                            .one(),
-                        )
-
-                commit_in_branch = (
-                    session.query(Commit)
-                    .filter(and_(Commit.id == prev_commit, or_(Commit.branch_id == 1, Commit.branch_id == branch.id)))
-                    .one_or_none()
-                )
-                prev_commit = commit_in_branch.prev_commit_id
-    except sqlalchemy.exc.NoResultFound:
-        logging.error(sqlalchemy.exc.NoResultFound, exc_info=True)
+            commit = commit.prev_commit
 
 
 def update_column(
@@ -109,7 +81,7 @@ def update_column(
     То есть создать новые атрибуты и указать начало и конец
     """
     logging.debug('update_column')
-    column_and_attributes = get_column(branch, column.id, session=session)
+    column_and_attributes = get_column(branch, column.id)
     if branch.type != BranchTypes.WIP:
         raise ProhibitedActionInBranch("Column altering", branch.name)
     name = name_converter(name)
@@ -135,7 +107,7 @@ def delete_column(branch: Branch, column: DbColumn, *, session: Session) -> Comm
     То есть создать коммит с пустым концом
     """
     logging.debug('delete_column')
-    column_and_attributes = get_column(branch, column.id, session=session)
+    column_and_attributes = get_column(branch, column.id)
     if branch.type != BranchTypes.WIP:
         raise ProhibitedActionInBranch("Column deleting", branch.name)
     s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()

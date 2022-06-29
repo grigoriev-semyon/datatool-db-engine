@@ -71,12 +71,11 @@ def test_column_get():
 
     # Тут должно падать потому, что ветка была сделана в момент до того, как колонка была создана
     with pytest.raises(ColumnDoesntExists):
-        get_column(branch2, col_id, session=session)
+        get_column(branch2, col_id)
 
     # Тут колонка есть, потому что в мэйн уже изменения завезли
     ubranch = create_branch("Test Table 2", session=session)
-    # FIXME: В ветке не существует колонки. Но эта колонке существует в main ветке и которая бранчуется позже
-    ucol, uattrs = get_column(ubranch, col_id, session=session)
+    ucol, uattrs = get_column(ubranch, col_id)
 
     assert col_id == ucol.id
     assert attrs_id == uattrs.id, "Commit in branch and in main are different"
@@ -107,7 +106,7 @@ def test_column_update():
     assert ucommit_1.attribute_id_in == col_attr_1.id
     assert ucommit_1.attribute_id_out == ucol_attr_1.id
 
-    tcol, tcol_attr = get_column(branch, col_1.id, session=session)
+    tcol, tcol_attr = get_column(branch, col_1.id)
     assert tcol.id == ucol_1.id
     assert tcol_attr.name == "uid"
     assert tcol_attr.datatype == "integer"
@@ -127,7 +126,7 @@ def test_table_delete():
         get_table(branch, table.id)
 
     with pytest.raises(ColumnDeleted):
-        get_column(branch, col_1.id, session=session)
+        get_column(branch, col_1.id)
 
 
 def test_column_delete():
@@ -138,7 +137,7 @@ def test_column_delete():
     ucommit = delete_column(branch, col, session=session)
 
     with pytest.raises(ColumnDeleted):
-        get_column(branch, col.id, session=session)
+        get_column(branch, col.id)
 
     assert ucommit.attribute_id_in == attrs.id
     assert ucommit.attribute_id_out is None
