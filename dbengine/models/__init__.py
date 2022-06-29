@@ -13,4 +13,5 @@ __all__ = [
     "DbEntity",
     "DbTable",
     "DbTableAttributes",
+    "SchemeTypes",
 ]
