@@ -1,15 +1,14 @@
 import logging
-from typing import List, Optional, Tuple, Any
+from typing import List, Optional, Tuple
 
 import sqlalchemy.exc
-from sqlalchemy import and_, or_
+from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 from dbengine.exceptions import ProhibitedActionInBranch, TableDeleted, TableDoesntExists
-from dbengine.models import AttributeTypes, Branch, BranchTypes, Commit, DbColumn, DbTable, DbTableAttributes, \
-    DbAttributes
-from .column import create_column, delete_column
 from dbengine.methods.converters import name_converter
+from dbengine.models import AttributeTypes, Branch, BranchTypes, Commit, DbColumn, DbTable, DbTableAttributes
+from .column import create_column, delete_column
 
 logger = logging.getLogger(__name__)
 
