@@ -1,4 +1,4 @@
-from .branch import Branch, BranchTypes, Commit
+from .branch import Branch, BranchTypes, Commit, SchemeTypes
 from .entity import AttributeTypes, DbAttributes, DbColumn, DbColumnAttributes, DbEntity, DbTable, DbTableAttributes
 
 

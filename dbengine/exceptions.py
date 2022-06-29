@@ -61,3 +61,8 @@ class ColumnDoesntExists(ColumnError):
 class ColumnDeleted(ColumnError):
     def __init__(self, column_id: int, branch_name: str):
         super().__init__(message=f"Column {column_id} was deleted in {branch_name} branch")
+
+
+class NotSupportedSchemeError(Exception):
+    def __init__(self, message="This scheme in not supported"):
+        super().__init__(message)

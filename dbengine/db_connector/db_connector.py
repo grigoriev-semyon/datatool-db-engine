@@ -20,16 +20,12 @@ class IDbConnector(metaclass=ABCMeta):
         Connection to the coordinated database
     __coordinated_connection_url: AnyURL
         URL coordinated database
-    __coordination_session:: Session()
-        Session with coordinating database
     __settings: Settings
         env fields
     """
     __settings: Settings = Settings()
     __coordinated_connection: Connection = None
     __coordinated_connection_url: AnyUrl = None
-
-    # __coordination_session = db.session
 
     def connect(self):
         """
