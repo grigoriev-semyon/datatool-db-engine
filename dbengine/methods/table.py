@@ -42,6 +42,7 @@ def create_table(
 
 def get_table(branch: Branch, id: int, start_from_commit: Optional[Commit] = None) -> Tuple[
     DbTable, DbTableAttributes]:
+    """Return table and last attributes in branch by id"""
     commit = branch.last_commit
     attr_out: DbTableAttributes
     if start_from_commit and start_from_commit in branch.commits:

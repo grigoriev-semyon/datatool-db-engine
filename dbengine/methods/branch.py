@@ -1,5 +1,5 @@
 import logging
-from typing import Tuple, Optional
+from typing import Tuple, Optional, List
 
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session
@@ -155,7 +155,6 @@ def ok_branch(branch: Branch, *, session: Session, test_connector, prod_connecto
     branch.type = BranchTypes.MERGED
     session.query(Branch).filter(Branch.id == branch.id).update({"type": BranchTypes.MERGED})
     session.flush()
-    # s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id).all()
     commits_list = []
     for row in branch.commits:
         commits_list.append(row)
@@ -193,6 +192,9 @@ def get_branch(id: int, *, session: Session) -> Branch:
 
 
 def check_conflicts(branch: Branch, session: Session):
+    """
+    Checking conflicts with main branch
+    """
     attrs = []
     branch_begin_id = None
     for row in branch.commits:
@@ -222,6 +224,9 @@ def check_conflicts(branch: Branch, session: Session):
 
 
 def get_type_of_commit_object(commit: Commit) -> Optional[str]:
+    """
+    Get type of changing object: Table or Column
+    """
     anyattr = commit.attribute_in or commit.attribute_out
     if not anyattr:
         return None
@@ -229,6 +234,9 @@ def get_type_of_commit_object(commit: Commit) -> Optional[str]:
 
 
 def get_action_of_commit(commit: Commit) -> str:
+    """
+    Get action if commit: Alter, Drop or Create
+    """
     attr_in, attr_out = commit.attribute_id_in, commit.attribute_id_out
     if attr_in is not None and attr_out is not None:
         return CommitActionTypes.ALTER
@@ -239,6 +247,9 @@ def get_action_of_commit(commit: Commit) -> str:
 
 
 def get_names_table_in_commit(commit: Commit) -> Tuple:
+    """
+    Get old and new tablename in commit
+    """
     attr_in, attr_out = commit.attribute_in, commit.attribute_out
     name1, name2 = None, None
     if get_type_of_commit_object(commit) == AttributeTypes.TABLE:
@@ -250,6 +261,9 @@ def get_names_table_in_commit(commit: Commit) -> Tuple:
 
 
 def get_names_column_in_commit(commit: Commit) -> Tuple:
+    """
+    Get old and new columnname in commit
+    """
     attr_in, attr_out = commit.attribute_in, commit.attribute_out
     tablename, name1, name2, datatype1, datatype2 = None, None, None, None, None
     if get_type_of_commit_object(commit) == AttributeTypes.COLUMN:
@@ -263,17 +277,20 @@ def get_names_column_in_commit(commit: Commit) -> Tuple:
     return tablename, name1, datatype1, name2, datatype2
 
 
-def get_all_tables_and_columns_in_branch(branch: Branch, session: Session):
-    table_ids = get_tables(branch, session=session)
+def get_all_tables_and_columns_in_branch(branch: Branch, session: Session) -> List:
+    """
+    Get all changed/created objects in branch
+    """
+    table_ids = get_tables(branch)
     tables = []
     columns = []
     result = []
     for tablerow in table_ids:
-        table = get_table(branch, tablerow, session=session)
+        table = get_table(branch, tablerow)
         tables.append(table)
         column_ids = get_columns(branch, table[0], session=session)
         for columnrow in column_ids:
-            column = get_column(branch, columnrow, session=session)
+            column = get_column(branch, columnrow)
             columns.append(column)
         result.append((table, tuple(columns)))
         columns = []

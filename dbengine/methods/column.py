@@ -2,13 +2,12 @@ import logging
 from typing import List, Optional, Tuple
 
 import sqlalchemy.exc
-from sqlalchemy import and_, or_
+from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 from dbengine.exceptions import ColumnDeleted, ColumnDoesntExists, ProhibitedActionInBranch
-from dbengine.models import AttributeTypes, Branch, BranchTypes, Commit, DbColumn, DbColumnAttributes, DbTable
 from dbengine.methods.converters import name_converter
-
+from dbengine.models import AttributeTypes, Branch, BranchTypes, Commit, DbColumn, DbColumnAttributes, DbTable
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +40,7 @@ def create_column(
 
 
 def get_column(branch: Branch, id: int, start_from_commit: Optional[Commit] = None) -> Tuple[DbColumn, DbColumnAttributes]:
+    """Return column and last attributes in branch by id"""
     commit = branch.last_commit
     attr_out: DbColumnAttributes
     if start_from_commit and start_from_commit in branch.commits:
@@ -76,9 +76,8 @@ def update_column(
     datatype: Optional[str] = None,
     session: Session,
 ) -> Tuple[DbColumn, DbColumnAttributes, Commit]:
-    """Update one or more attributes
-
-    То есть создать новые атрибуты и указать начало и конец
+    """
+    Update one or more column attributes
     """
     logging.debug('update_column')
     column_and_attributes = get_column(branch, column.id)
@@ -101,10 +100,8 @@ def update_column(
 
 
 def delete_column(branch: Branch, column: DbColumn, *, session: Session) -> Commit:
-    """Delete column from table from branch
-
-    То есть надо удалить у колонки атрибуты, сам объект колонки останется
-    То есть создать коммит с пустым концом
+    """
+    Delete column from table in branch
     """
     logging.debug('delete_column')
     column_and_attributes = get_column(branch, column.id)
@@ -121,7 +118,7 @@ def delete_column(branch: Branch, column: DbColumn, *, session: Session) -> Comm
 
 def get_columns(branch: Branch, table: DbTable, session: Session) -> List[int]:
     """
-    Get a list of id columns in a table in this branch
+    Get a list of id columns changed in the table in this branch
     """
     try:
         ids = []
