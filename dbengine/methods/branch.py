@@ -151,7 +151,6 @@ def ok_branch(branch: Branch, *, session: Session, test_connector, prod_connecto
                 prod_connector.execute(s)
             raise MergeError(branch.id)
     branch.type = BranchTypes.MERGED
-    session.query(Branch).filter(Branch.id == branch.id).update({"type": BranchTypes.MERGED})
     session.flush()
     commits_list = []
     for row in branch.commits:
