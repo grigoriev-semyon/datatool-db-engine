@@ -89,7 +89,6 @@ def request_merge_branch(branch: Branch, *, session: Session, test_connector) ->
         except DBAPIError:
             raise MergeError
     branch.type = BranchTypes.MR
-    session.query(Branch).filter(Branch.id == branch.id).update({"type": BranchTypes.MR})
     session.flush()
     logger.debug("request_merge_branch")
     return branch
