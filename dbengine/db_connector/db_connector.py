@@ -1,5 +1,6 @@
 import logging
 from abc import ABCMeta, abstractmethod
+from typing import Final
 
 from pydantic import AnyUrl
 from sqlalchemy.engine import create_engine
@@ -152,3 +153,6 @@ class PostgreConnector(IDbConnector):
         first_query = f"ALTER TABLE {tablename} RENAME COLUMN {columnname} TO {new_name};".join(n1).lstrip()
         second_query = f"ALTER TABLE {tablename} ALTER COLUMN {new_name} TYPE {new_datatype} USING {new_name}::{new_datatype};"
         return f"{first_query}{second_query}"
+
+
+CONNECTOR_DICT: Final = {"postgresql": PostgreConnector}

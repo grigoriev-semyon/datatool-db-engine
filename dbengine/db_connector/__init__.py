@@ -1,3 +1,4 @@
-from .db_connector import PostgreConnector
+from .db_connector import PostgreConnector, CONNECTOR_DICT
 
-__all__ = ["PostgreConnector"]
+__all__ = ["PostgreConnector",
+           "CONNECTOR_DICT"]

@@ -1,4 +1,4 @@
-from .branch import Branch, BranchTypes, Commit, SchemeTypes
+from .branch import Branch, BranchTypes, Commit
 from .entity import AttributeTypes, DbAttributes, DbColumn, DbColumnAttributes, DbEntity, DbTable, DbTableAttributes
 
 
@@ -13,5 +13,4 @@ __all__ = [
     "DbEntity",
     "DbTable",
     "DbTableAttributes",
-    "SchemeTypes",
 ]

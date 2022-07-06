@@ -4,24 +4,17 @@ from fastapi import APIRouter
 from fastapi.exceptions import HTTPException
 from fastapi_sqlalchemy import db
 
-from dbengine.exceptions import BranchError, BranchNotFoundError, NotSupportedSchemeError
+from dbengine.db_connector import CONNECTOR_DICT
+from dbengine.exceptions import BranchError, BranchNotFoundError
 from dbengine.methods import create_branch, get_branch, ok_branch, request_merge_branch, unrequest_merge_branch
-from dbengine.models import BranchTypes, SchemeTypes
+from dbengine.models import BranchTypes
 import dbengine.models
 from dbengine.routes.models import Branch
-from dbengine.db_connector.db_connector import PostgreConnector
 from dbengine.settings import Settings
 settings = Settings()
 
-if settings.DWH_CONNECTION_TEST.scheme == SchemeTypes.POSTGRESQL:
-    test_connector = PostgreConnector(settings.DWH_CONNECTION_TEST)
-else:
-    raise NotSupportedSchemeError
-
-if settings.DWH_CONNECTION_PROD.scheme == SchemeTypes.POSTGRESQL:
-    prod_connector = PostgreConnector(settings.DWH_CONNECTION_PROD)
-else:
-    raise NotSupportedSchemeError
+test_connector = CONNECTOR_DICT[settings.DWH_CONNECTION_TEST.scheme](settings.DWH_CONNECTION_TEST)
+prod_connector = CONNECTOR_DICT[settings.DWH_CONNECTION_PROD.scheme](settings.DWH_CONNECTION_PROD)
 
 branch_router = APIRouter(prefix="/branch", tags=["Branch"])
 
