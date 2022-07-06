@@ -102,7 +102,6 @@ def unrequest_merge_branch(branch: Branch, *, session: Session) -> Branch:
     if branch.type != BranchTypes.MR:
         raise IncorrectBranchType("Unreguest merge", branch.name)
     branch.type = BranchTypes.WIP
-    session.query(Branch).filter(Branch.id == branch.id).update({"type": BranchTypes.WIP})
     session.flush()
 
     logger.debug("unrequest_merge_branch")
