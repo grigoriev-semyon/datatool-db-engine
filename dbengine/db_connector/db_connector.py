@@ -11,7 +11,6 @@ from dbengine.methods.branch import get_action_of_commit, get_type_of_commit_obj
     get_names_column_in_commit
 from dbengine.models.branch import Branch, CommitActionTypes
 from dbengine.models.entity import AttributeTypes
-from dbengine.settings import Settings
 
 
 class IDbConnector(metaclass=ABCMeta):

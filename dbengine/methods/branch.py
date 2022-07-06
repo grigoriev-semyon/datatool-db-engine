@@ -273,22 +273,3 @@ def get_names_column_in_commit(commit: Commit) -> Tuple:
                 tablename = get_table(commit.branch, attr_out.column.table_id, commit)[1].name
     return tablename, name1, datatype1, name2, datatype2
 
-
-def get_all_tables_and_columns_in_branch(branch: Branch, session: Session) -> List:
-    """
-    Get all changed/created objects in branch
-    """
-    table_ids = get_tables(branch)
-    tables = []
-    columns = []
-    result = []
-    for tablerow in table_ids:
-        table = get_table(branch, tablerow)
-        tables.append(table)
-        column_ids = get_columns(branch, table[0], session=session)
-        for columnrow in column_ids:
-            column = get_column(branch, columnrow)
-            columns.append(column)
-        result.append((table, tuple(columns)))
-        columns = []
-    return result
