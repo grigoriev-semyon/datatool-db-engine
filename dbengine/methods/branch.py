@@ -37,7 +37,7 @@ def create_branch(name, *, session: Session) -> Branch:
 
     Тип ветки WIP, название ветки `name`
     """
-    s = session.query(Branch).filter(Branch.name == BranchTypes.MAIN).one_or_none()
+    s = session.query(Branch).filter(Branch.type == BranchTypes.MAIN).one_or_none()
     if not s:
         raise BranchError("Main branch does not exists")
     last_commit = session.query(Commit).filter(Commit.branch_id == 1).order_by(Commit.id.desc()).first()
