@@ -29,7 +29,7 @@ class IDbConnector(metaclass=ABCMeta):
         Connect to coordinated database
         """
         try:
-            engine = create_engine(self.__coordinated_connection_url, echo=True)
+            engine = create_engine(self.__coordinated_connection_url, pool_pre_ping=True)
             self.__coordinated_connection = engine.connect()
         except SQLAlchemyError:
             logging.error(SQLAlchemyError, exc_info=True)
