@@ -182,7 +182,7 @@ def ok_branch(branch: Branch, *, session: Session, test_connector, prod_connecto
 def get_branch(id: int, *, session: Session) -> Branch:
     """Return branch by id"""
     logger.debug("get_branch")
-    result = session.query(Branch).filter(Branch.id == id).one()
+    result = session.query(Branch).filter(Branch.id == id).one_or_none()
     if not result:
         raise BranchNotFoundError(id)
     return result
