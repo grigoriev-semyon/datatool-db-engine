@@ -22,9 +22,3 @@ def column_aggregator(column: DbColumn, attr: DbColumnAttributes) -> dict:
         "datatype": attr.datatype
     }
 
-
-def name_converter(name: str) -> str:
-    """
-    Removes spaces at the beginning and end, replaces spaces with "_"
-    """
-    return name.strip().replace(" ", "_")

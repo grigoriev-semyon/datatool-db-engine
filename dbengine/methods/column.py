@@ -6,7 +6,6 @@ from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 from dbengine.exceptions import ColumnDeleted, ColumnDoesntExists, ProhibitedActionInBranch
-from dbengine.methods.converters import name_converter
 from dbengine.models import AttributeTypes, Branch, BranchTypes, Commit, DbColumn, DbColumnAttributes, DbTable
 
 logger = logging.getLogger(__name__)
@@ -19,7 +18,6 @@ def create_column(
     logging.debug('create_column')
     if branch.type != BranchTypes.WIP:
         raise ProhibitedActionInBranch("Column creating", branch.name)
-    name = name_converter(name)
     s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()
     new_commit = Commit(branch_id=branch.id, attribute_id_in=None)
     if s:
@@ -83,7 +81,6 @@ def update_column(
     column_and_attributes = get_column(branch, column.id)
     if branch.type != BranchTypes.WIP:
         raise ProhibitedActionInBranch("Column altering", branch.name)
-    name = name_converter(name)
     s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id.desc()).first()
     new_commit = Commit(branch_id=branch.id, attribute_id_in=column_and_attributes[1].id)
     if s:
