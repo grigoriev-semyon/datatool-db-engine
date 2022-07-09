@@ -42,11 +42,22 @@ class Branch(Base):
         return self._commits[0]
 
     @hybrid_property
+    def first_commit(self) -> Commit:
+        return self._commits[-1]
+
+    @hybrid_property
     def commits(self) -> Iterator[Commit]:
         commit = self.last_commit
         yield commit
         while commit := commit.prev_commit:
             yield commit
+
+    @staticmethod
+    def prev_commits(commit: Commit) -> Iterator[Commit]:
+        while commit.prev_commit is not None:
+            yield commit
+            commit = commit.prev_commit
+        yield commit
 
     def __repr__(self):
         return f"<Branch id={self.id} type={self.type}>"
