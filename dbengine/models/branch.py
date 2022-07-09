@@ -53,7 +53,7 @@ class Branch(Base):
             yield commit
 
     @staticmethod
-    def prev_commits(commit: Commit) -> Iterator[Commit]:
+    def commits_from(commit: Commit) -> Iterator[Commit]:
         while commit.prev_commit is not None:
             yield commit
             commit = commit.prev_commit
