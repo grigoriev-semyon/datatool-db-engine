@@ -39,28 +39,23 @@ def create_column(
 
 def get_column(branch: Branch, id: int, start_from_commit: Optional[Commit] = None) -> Tuple[DbColumn, DbColumnAttributes]:
     """Return column and last attributes in branch by id"""
-    row = branch.last_commit
+    commit = branch.last_commit
     attr_out: DbColumnAttributes
     if start_from_commit and start_from_commit in branch.commits:
-        row = start_from_commit
-    for row in branch.commits:
+        commit = start_from_commit
+    for row in branch.prev_commits(commit):
         attr_out, attr_in = row.attribute_out, row.attribute_in
-        if attr_in is None and attr_out is None:
-            if not row.prev_commit:
-                raise ColumnDoesntExists(id, branch.name)
-        elif attr_in is not None and attr_out is None:
+        if attr_in is not None and attr_out is None:
             if attr_in and attr_in.type == AttributeTypes.COLUMN:
                 if attr_in.column_id == id:
                     raise ColumnDeleted(id, branch.name)
-            else:
-                if not row.prev_commit:
-                    raise ColumnDoesntExists(id, branch.name)
         elif (attr_in is not None and attr_out is not None) or (attr_in is None and attr_out is not None):
             if attr_out and attr_out.type == AttributeTypes.COLUMN:
                 if attr_out.column_id == id:
                     return (
                         attr_out.column, attr_out
                     )
+    raise ColumnDoesntExists(id, branch.name)
 
 
 def update_column(

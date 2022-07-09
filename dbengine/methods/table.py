@@ -45,27 +45,19 @@ def get_table(branch: Branch, id: int, start_from_commit: Optional[Commit] = Non
     attr_out: DbTableAttributes
     if start_from_commit and start_from_commit in branch.commits:
         commit = start_from_commit
-    while True:
-        attr_out, attr_in = commit.attribute_out, commit.attribute_in
-        if attr_in is None and attr_out is None:
-            if not commit.prev_commit:
-                raise TableDoesntExists(id, branch.name)
-            commit = commit.prev_commit
-        elif attr_in is not None and attr_out is None:
+    for row in branch.prev_commits(commit):
+        attr_out, attr_in = row.attribute_out, row.attribute_in
+        if attr_in is not None and attr_out is None:
             if attr_in and attr_in.type == AttributeTypes.TABLE:
                 if attr_in.table_id == id:
                     raise TableDeleted(id, branch.name)
-            else:
-                if not commit.prev_commit:
-                    raise TableDoesntExists(id, branch.name)
-                commit = commit.prev_commit
         elif (attr_in is not None and attr_out is not None) or (attr_in is None and attr_out is not None):
             if attr_out and attr_out.type == AttributeTypes.TABLE:
                 if attr_out.table_id == id:
                     return (
                         attr_out.table, attr_out
                     )
-            commit = commit.prev_commit
+    raise TableDoesntExists(id, branch.name)
 
 
 def update_table(

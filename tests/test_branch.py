@@ -23,16 +23,16 @@ def test_branch_ok():
     session = Session()
     branch = create_branch("Test 1", session=session)
     assert branch.type == BranchTypes.WIP
-    create_table(branch, "Test Branch 1", session=session)
+    create_table(branch, "еest_Branch_1", session=session)
 
     request_merge_branch(branch, session=session, test_connector=test_connector)
     assert branch.type == BranchTypes.MR
     with pytest.raises(BranchError):
-        create_table(branch, "Test Branch 1", session=session)
+        create_table(branch, "test_branch_2", session=session)
 
     ok_branch(branch, session=session, test_connector=test_connector, prod_connector=prod_connector)
     with pytest.raises(BranchError):
-        create_table(branch, "Test Branch 1", session=session)
+        create_table(branch, "test_branch 3", session=session)
 
     assert branch.type == BranchTypes.MERGED
     assert branch.name == "Test 1"
@@ -42,23 +42,23 @@ def test_branch_mr():
     session = Session()
     branch = create_branch("Test 2", session=session)
     assert branch.type == BranchTypes.WIP
-    create_table(branch, "Test Branch 2", session=session)
+    create_table(branch, "test_branch_4", session=session)
 
     request_merge_branch(branch, session=session, test_connector=test_connector)
     with pytest.raises(BranchError):
-        create_table(branch, "Test Branch 2", session=session)
+        create_table(branch, "test_branch_5", session=session)
     assert branch.type == BranchTypes.MR
 
     unrequest_merge_branch(branch, session=session)
     assert branch.type == BranchTypes.WIP
-    create_table(branch, "Test Branch 2", session=session)
+    create_table(branch, "test_branch_6", session=session)
 
 
 def test_commit_iteration():
     session = Session()
     branch = create_branch("Test 3", session=session)
-    _, _, commit1 = create_table(branch, "Test 3 Table 1", session=session)
-    _, _, commit2 = create_table(branch, "Test 3 Table 2", session=session)
+    _, _, commit1 = create_table(branch, "Test_3_Table_1", session=session)
+    _, _, commit2 = create_table(branch, "Test_3_Table_2", session=session)
     session.flush()
 
     assert commit2.prev_commit == commit1
