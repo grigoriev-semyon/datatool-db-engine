@@ -1,15 +1,14 @@
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import Final
+from typing import Final, Tuple, Optional
 
 from pydantic import AnyUrl
 from sqlalchemy.engine import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.future import Connection
 
-from dbengine.methods.branch import get_action_of_commit, get_type_of_commit_object, get_names_table_in_commit, \
-    get_names_column_in_commit
-from dbengine.models.branch import Branch, CommitActionTypes
+from dbengine.methods import get_table
+from dbengine.models.branch import Branch, CommitActionTypes, Commit
 from dbengine.models.entity import AttributeTypes
 
 
@@ -36,6 +35,60 @@ class IDbConnector(metaclass=ABCMeta):
 
     def __init__(self, connection_url: AnyUrl):
         self.__coordinated_connection_url = connection_url
+
+    @staticmethod
+    def __get_action_of_commit(commit: Commit) -> str:
+        """
+        Get action if commit: Alter, Drop or Create
+        """
+        attr_in, attr_out = commit.attribute_id_in, commit.attribute_id_out
+        if attr_in is not None and attr_out is not None:
+            return CommitActionTypes.ALTER
+        elif attr_in is not None and attr_out is None:
+            return CommitActionTypes.DROP
+        elif attr_in is None and attr_out is not None:
+            return CommitActionTypes.CREATE
+
+    @staticmethod
+    def __get_names_table_in_commit(commit: Commit) -> Tuple:
+        """
+        Get old and new tablename in commit
+        """
+        attr_in, attr_out = commit.attribute_in, commit.attribute_out
+        name1, name2 = None, None
+        if IDbConnector.__get_type_of_commit_object(commit) == AttributeTypes.TABLE:
+            if attr_in is not None:
+                name1 = attr_in.name
+            if attr_out is not None:
+                name2 = attr_out.name
+        return name1, name2
+
+    @staticmethod
+    def __get_names_column_in_commit(commit: Commit) -> Tuple:
+        """
+        Get old and new columnname in commit
+        """
+        attr_in, attr_out = commit.attribute_in, commit.attribute_out
+        tablename, name1, name2, datatype1, datatype2 = None, None, None, None, None
+        if IDbConnector.__get_type_of_commit_object(commit) == AttributeTypes.COLUMN:
+            if attr_in is not None:
+                name1, datatype1 = attr_in.name, attr_in.datatype
+                tablename = get_table(commit.branch, attr_in.column.table_id, commit)[1].name
+            if attr_out is not None:
+                name2, datatype2 = attr_out.name, attr_out.datatype
+                if not tablename:
+                    tablename = get_table(commit.branch, attr_out.column.table_id, commit)[1].name
+        return tablename, name1, datatype1, name2, datatype2
+
+    @staticmethod
+    def __get_type_of_commit_object(commit: Commit) -> Optional[str]:
+        """
+        Get type of changing object: Table or Column
+        """
+        anyattr = commit.attribute_in or commit.attribute_out
+        if not anyattr:
+            return None
+        return anyattr.type
 
     @staticmethod
     @abstractmethod
@@ -91,12 +144,12 @@ class IDbConnector(metaclass=ABCMeta):
         """
         s = branch.commits
         for row in s:
-            object_type = get_type_of_commit_object(row)
-            action_type = get_action_of_commit(row)
+            object_type = IDbConnector.__get_type_of_commit_object(row)
+            action_type = IDbConnector.__get_action_of_commit(row)
             if object_type == AttributeTypes.TABLE:
-                name1, name2 = get_names_table_in_commit(row)
+                name1, name2 = IDbConnector.__get_names_table_in_commit(row)
             elif object_type == AttributeTypes.COLUMN:
-                tablename, name1, datatype1, name2, datatype2 = get_names_column_in_commit(row)
+                tablename, name1, datatype1, name2, datatype2 = IDbConnector.__get_names_column_in_commit(row)
             if object_type == AttributeTypes.TABLE:
                 if action_type == CommitActionTypes.CREATE and name1 is None and name2 is not None:
                     row.sql_up = self._create_table(name2)
