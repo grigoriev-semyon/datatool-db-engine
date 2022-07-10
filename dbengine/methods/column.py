@@ -26,7 +26,7 @@ def create_column(
     session.add(new_column)
     session.flush()
     new_column_attribute = DbColumnAttributes(
-        type=AttributeTypes.COLUMN, column_id=new_column.id, datatype=datatype, name=name
+        type=AttributeTypes.COLUMN, column_id=new_column.id, datatype=datatype, name=name, table_id=table.id
     )
     session.add(new_column_attribute)
     session.flush()

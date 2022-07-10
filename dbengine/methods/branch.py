@@ -58,7 +58,8 @@ def request_merge_branch(branch: Branch, *, session: Session, test_connector) ->
     """
     if branch.type != BranchTypes.WIP:
         raise IncorrectBranchType("request merge", "main")
-    check_conflicts(branch, session=session)
+    if check_conflicts(branch, session=session):
+        raise MergeError(branch.id)
     commits, lines_up, lines_down, rollback = [], [], [], []
     test_connector.generate_migration(branch)
     session.flush()
@@ -115,7 +116,8 @@ def ok_branch(branch: Branch, *, session: Session, test_connector, prod_connecto
     """
     if branch.type != BranchTypes.MR:
         raise IncorrectBranchType("Confirm merge", branch.name)
-    check_conflicts(branch, session=session)
+    if check_conflicts(branch, session=session):
+        raise MergeError(branch.id)
     commits, lines_up, lines_down, rollback = [], [], [], []
     prod_connector.generate_migration(branch)
     session.flush()
@@ -189,33 +191,22 @@ def get_branch(id: int, *, session: Session) -> Branch:
 
 
 def check_conflicts(branch: Branch, session: Session):
-    """
-    Checking conflicts with main branch
-    """
-    attrs = []
-    branch_begin_id = None
-    for row in branch.commits:
-        if row.attribute_id_in:
-            attrs.append(row.attribute_id_in)
-        if row.attribute_id_out:
-            attrs.append(row.attribute_id_out)
-        if row.prev_commit.branch_id == 1:
-            branch_begin_id = row.prev_commit
-            break
-    main_branch = get_branch(1, session=session)
-    unique_attrs = set(attrs)
-    main_commits = []
-    for row in main_branch.commits:
-        if row == branch_begin_id:
-            break
-        if row != branch_begin_id:
-            main_commits.append(row)
-        if row.prev_commit.id == branch_begin_id:
-            break
-    if not main_commits:
-        return True
-    for row in main_commits:
-        if row.attribute_id_in in unique_attrs or row.attribute_id_out in unique_attrs:
-            raise MergeError(branch.id)
-    return True
+    main = get_branch(1, session=session)
+    entities_changed_branch = set()
+    entities_changed_main = set()
 
+    for c in branch.commits:
+        if (c.attribute_in or c.attribute_out) is not None:
+            entities_changed_branch.add((c.attribute_in or c.attribute_out).table.id)
+        if c.prev_commit.id == main.id:
+            break
+    for c in main.commits:
+        if main.last_commit.id == branch.first_commit.prev_commit.id:
+            break
+        if (c.attribute_in or c.attribute_out) is not None:
+            entities_changed_main.add((c.attribute_in or c.attribute_out).table.id)
+        if c.prev_commit.id == branch.first_commit.prev_commit.id:
+            break
+    if len(entities_changed_branch & entities_changed_main) == 0:
+        return False
+    return True
