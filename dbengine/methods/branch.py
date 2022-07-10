@@ -191,6 +191,9 @@ def get_branch(id: int, *, session: Session) -> Branch:
 
 
 def check_conflicts(branch: Branch, session: Session):
+    """
+    Checking conflicts with main branch
+    """
     main = get_branch(1, session=session)
     entities_changed_branch = set()
     entities_changed_main = set()
