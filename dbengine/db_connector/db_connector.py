@@ -164,10 +164,10 @@ class IDbConnector(metaclass=ABCMeta):
                 if action_type == CommitActionTypes.CREATE and name1 is None and datatype1 is None and name2 is not None and datatype2 is not None and tablename is not None:
                     row.sql_up = self._create_column(tablename, name2, datatype2)
                     row.sql_down = self._delete_column(tablename, name2)
-                if action_type == CommitActionTypes.ALTER and name1 is not None and datatype1 is not None and name2 is not None and datatype2 is not None and tablename is not None:
+                elif action_type == CommitActionTypes.ALTER and name1 is not None and datatype1 is not None and name2 is not None and datatype2 is not None and tablename is not None:
                     row.sql_up = self._alter_column(tablename, name1, name2, datatype1, datatype2)
                     row.sql_down = self._alter_column(tablename, name2, name1, datatype2, datatype1)
-                if action_type == CommitActionTypes.DROP and name1 is not None and name2 is None and datatype1 is not None and datatype2 is None and tablename is not None:
+                elif action_type == CommitActionTypes.DROP and name1 is not None and name2 is None and datatype1 is not None and datatype2 is None and tablename is not None:
                     row.sql_up = self._delete_column(tablename, name1)
                     row.sql_down = self._create_column(tablename, name1, datatype1)
 
