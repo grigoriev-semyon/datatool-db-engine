@@ -172,7 +172,7 @@ class IDbConnector(metaclass=ABCMeta):
                     row.sql_up = self._delete_column(tablename, name1)
                     row.sql_down = self._create_column(tablename, name1, datatype1)
 
-    def upgrade(self, commits: List[Commit]):
+    def upgrade(self, commits: List[Commit]) -> List[str]:
         rollback, commits_up, commits_down = [], [], []
         for row in commits:
             if row.sql_up is not None and row.sql_down is not None:
@@ -193,7 +193,7 @@ class IDbConnector(metaclass=ABCMeta):
                 raise MigrationError
         return rollback
 
-    def downgrade(self, rollback: List[str]):
+    def downgrade(self, rollback: List[str]) -> None:
         for row in rollback.__reversed__():
             try:
                 self.__coordinated_connection.execute(row)
