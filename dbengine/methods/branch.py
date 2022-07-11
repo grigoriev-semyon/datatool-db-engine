@@ -1,16 +1,10 @@
 import logging
-from typing import Tuple, Optional, List
 
-from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session
 
 from dbengine.exceptions import BranchError, IncorrectBranchType, BranchNotFoundError, MergeError, MigrationError, \
     FatalMigrationError
-from dbengine.methods.column import get_columns, get_column
-from dbengine.methods.table import get_table, get_tables
 from dbengine.models import Branch, BranchTypes, Commit
-from dbengine.models.branch import CommitActionTypes
-from dbengine.models.entity import AttributeTypes
 
 logger = logging.getLogger(__name__)
 
