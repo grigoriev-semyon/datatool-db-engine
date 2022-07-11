@@ -4,8 +4,7 @@ from fastapi import APIRouter
 from fastapi.exceptions import HTTPException
 from fastapi_sqlalchemy import db
 
-from dbengine.exceptions import BranchNotFoundError, TableDoesntExists, TableDeleted, \
-    ProhibitedActionInBranch
+from dbengine.exceptions import BranchNotFoundError, TableDoesntExists, TableDeleted, ProhibitedActionInBranch
 from dbengine.methods import create_column, delete_column, get_branch, get_column, get_table, update_column
 from dbengine.methods.converters import column_aggregator
 from dbengine.methods.column import get_columns
@@ -15,8 +14,7 @@ column_router = APIRouter(prefix="/table/{table_id}/column", tags=["Column"])
 
 
 @column_router.post("", response_model=Column)
-async def http_create_column(
-        branch_id: int, table_id: int, name: str, datatype: str):
+async def http_create_column(branch_id: int, table_id: int, name: str, datatype: str):
     try:
         branch = get_branch(branch_id, session=db.session)
     except BranchNotFoundError:
@@ -45,8 +43,7 @@ async def http_get_column(branch_id: int, column_id: int):
 
 
 @column_router.patch("/{column_id}", response_model=Column)
-async def http_update_column(
-        branch_id: int, column_id: int, name: str, datatype: str):
+async def http_update_column(branch_id: int, column_id: int, name: str, datatype: str):
     try:
         branch = get_branch(branch_id, session=db.session)
     except BranchNotFoundError:

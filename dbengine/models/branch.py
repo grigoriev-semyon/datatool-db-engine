@@ -33,9 +33,7 @@ class Branch(Base):
     name = Column(String)
     create_ts = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    _commits: List[Commit] = relationship(
-        "Commit", foreign_keys="Commit.branch_id", order_by="desc(Commit.create_ts)"
-    )
+    _commits: List[Commit] = relationship("Commit", foreign_keys="Commit.branch_id", order_by="desc(Commit.create_ts)")
 
     @hybrid_property
     def last_commit(self) -> Commit:

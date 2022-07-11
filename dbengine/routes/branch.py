@@ -11,6 +11,7 @@ from dbengine.models import BranchTypes
 import dbengine.models
 from dbengine.routes.models import Branch
 from dbengine.settings import Settings
+
 settings = Settings()
 
 test_connector = CONNECTOR_DICT[settings.DWH_CONNECTION_TEST.scheme](settings.DWH_CONNECTION_TEST)
@@ -84,5 +85,3 @@ async def patch_branch(branch_id: int, name: str):
         raise HTTPException(status_code=403)
     branch.name = name
     db.session.flush()
-
-
