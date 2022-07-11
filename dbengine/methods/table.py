@@ -38,8 +38,7 @@ def create_table(
     return new_table, new_table_attribute, new_commit
 
 
-def get_table(branch: Branch, id: int, start_from_commit: Optional[Commit] = None) -> Tuple[
-    DbTable, DbTableAttributes]:
+def get_table(branch: Branch, id: int, start_from_commit: Optional[Commit] = None) -> Tuple[DbTable, DbTableAttributes]:
     """Return table and last attributes in branch by id"""
     commit = branch.last_commit
     attr_out: DbTableAttributes
@@ -54,9 +53,7 @@ def get_table(branch: Branch, id: int, start_from_commit: Optional[Commit] = Non
         elif (attr_in is not None and attr_out is not None) or (attr_in is None and attr_out is not None):
             if attr_out and attr_out.type == AttributeTypes.TABLE:
                 if attr_out.table_id == id:
-                    return (
-                        attr_out.table, attr_out
-                    )
+                    return (attr_out.table, attr_out)
     raise TableDoesntExists(id, branch.name)
 
 

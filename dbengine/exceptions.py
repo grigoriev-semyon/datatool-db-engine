@@ -74,5 +74,5 @@ class MigrationError(BranchError):
 
 
 class FatalMigrationError(MigrationError):
-    def __init__(self, message = "Failed to create tables and failed to rollback version back"):
+    def __init__(self, message="Failed to create tables and failed to rollback version back"):
         super().__init__(message)

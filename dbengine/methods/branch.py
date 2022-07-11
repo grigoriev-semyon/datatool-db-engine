@@ -2,8 +2,14 @@ import logging
 
 from sqlalchemy.orm import Session
 
-from dbengine.exceptions import BranchError, IncorrectBranchType, BranchNotFoundError, MergeError, MigrationError, \
-    FatalMigrationError
+from dbengine.exceptions import (
+    BranchError,
+    IncorrectBranchType,
+    BranchNotFoundError,
+    MergeError,
+    MigrationError,
+    FatalMigrationError,
+)
 from dbengine.models import Branch, BranchTypes, Commit
 
 logger = logging.getLogger(__name__)

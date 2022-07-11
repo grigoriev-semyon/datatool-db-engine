@@ -37,7 +37,9 @@ def create_column(
     return new_column, new_column_attribute, new_commit
 
 
-def get_column(branch: Branch, id: int, start_from_commit: Optional[Commit] = None) -> Tuple[DbColumn, DbColumnAttributes]:
+def get_column(
+    branch: Branch, id: int, start_from_commit: Optional[Commit] = None
+) -> Tuple[DbColumn, DbColumnAttributes]:
     """Return column and last attributes in branch by id"""
     commit = branch.last_commit
     attr_out: DbColumnAttributes
@@ -52,9 +54,7 @@ def get_column(branch: Branch, id: int, start_from_commit: Optional[Commit] = No
         elif (attr_in is not None and attr_out is not None) or (attr_in is None and attr_out is not None):
             if attr_out and attr_out.type == AttributeTypes.COLUMN:
                 if attr_out.column_id == id:
-                    return (
-                        attr_out.column, attr_out
-                    )
+                    return (attr_out.column, attr_out)
     raise ColumnDoesntExists(id, branch.name)
 
 
