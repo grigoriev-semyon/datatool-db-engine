@@ -5,7 +5,7 @@ from fastapi_sqlalchemy import db
 
 from dbengine.exceptions import TableDoesntExists, TableDeleted, BranchNotFoundError, ProhibitedActionInBranch
 from dbengine.methods import create_table, delete_table, get_branch, get_table, get_tables, update_table
-from dbengine.methods.aggregators import table_aggregator
+from dbengine.methods.converters import table_aggregator
 from dbengine.routes.models import Table
 
 table_router = APIRouter(prefix="/table", tags=["Table"])
@@ -31,7 +31,7 @@ async def http_get_table(branch_id: int, table_id: int):
     except BranchNotFoundError:
         raise HTTPException(status_code=404, detail="Branch not found")
     try:
-        table = get_table(branch, table_id, session=db.session)
+        table = get_table(branch, table_id)
         return table_aggregator(table[0], table[1])
     except TableDoesntExists as e:
         raise HTTPException(status_code=404, detail=e)
@@ -46,7 +46,7 @@ async def http_update_table(branch_id: int, table_id: int, name: str):
     except BranchNotFoundError:
         raise HTTPException(status_code=404, detail="Branch not found")
     try:
-        table = get_table(branch, table_id, session=db.session)
+        table = get_table(branch, table_id)
     except TableDoesntExists as e:
         raise HTTPException(status_code=404, detail=e)
     except TableDeleted as e:
@@ -65,7 +65,7 @@ async def http_delete_table(branch_id: int, table_id: int):
     except BranchNotFoundError:
         raise HTTPException(status_code=404, detail="Branch not found")
     try:
-        table = get_table(branch, table_id, session=db.session)
+        table = get_table(branch, table_id)
     except TableDoesntExists as e:
         raise HTTPException(status_code=404, detail=e)
     except TableDeleted:
@@ -82,9 +82,9 @@ async def http_get_tables_in_branch(branch_id: int):
         branch = get_branch(branch_id, session=db.session)
     except BranchNotFoundError:
         raise HTTPException(status_code=404, detail="Branch not found")
-    table_ids = get_tables(branch, session=db.session)
+    table_ids = get_tables(branch)
     result = []
     for row in table_ids:
-        table = get_table(branch, row, session=db.session)
+        table = get_table(branch, row)
         result.append(table_aggregator(table[0], table[1]))
     return result

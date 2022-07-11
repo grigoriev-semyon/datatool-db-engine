@@ -21,6 +21,18 @@ class BranchNotFoundError(BranchError):
         super().__init__(message)
 
 
+class BranchConflict(BranchError):
+    def __init__(self, branch_id: int):
+        message = f"Branch {branch_id} conflicts with main branch"
+        super().__init__(message)
+
+
+class MergeError(BranchError):
+    def __init__(self, branch_id: int):
+        message = f"Merging error occurred with branch {branch_id}"
+        super().__init__(message)
+
+
 class TableError(Exception):
     def __init__(self, message="Table error occurred"):
         super().__init__(message)
@@ -49,3 +61,18 @@ class ColumnDoesntExists(ColumnError):
 class ColumnDeleted(ColumnError):
     def __init__(self, column_id: int, branch_name: str):
         super().__init__(message=f"Column {column_id} was deleted in {branch_name} branch")
+
+
+class NotSupportedSchemeError(Exception):
+    def __init__(self, message="This scheme in not supported"):
+        super().__init__(message)
+
+
+class MigrationError(BranchError):
+    def __init__(self, message="Migration error occurred"):
+        super().__init__(message)
+
+
+class FatalMigrationError(MigrationError):
+    def __init__(self, message = "Failed to create tables and failed to rollback version back"):
+        super().__init__(message)

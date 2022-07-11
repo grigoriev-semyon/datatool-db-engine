@@ -10,6 +10,7 @@ from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
+from dbengine.models.entity import DbAttributes
 from .base import Base
 
 
@@ -18,6 +19,12 @@ class BranchTypes(str, Enum):
     WIP = "WORK IN PROGRESS"
     MR = "MERGE REQUEST"
     MERGED = "MERGED"
+
+
+class CommitActionTypes(str, Enum):
+    ALTER = "ALTER"
+    DROP = "DROP"
+    CREATE = "CREATE"
 
 
 class Branch(Base):
@@ -35,11 +42,22 @@ class Branch(Base):
         return self._commits[0]
 
     @hybrid_property
+    def first_commit(self) -> Commit:
+        return self._commits[-1]
+
+    @hybrid_property
     def commits(self) -> Iterator[Commit]:
         commit = self.last_commit
         yield commit
         while commit := commit.prev_commit:
             yield commit
+
+    @staticmethod
+    def commits_from(commit: Commit) -> Iterator[Commit]:
+        while commit.prev_commit is not None:
+            yield commit
+            commit = commit.prev_commit
+        yield commit
 
     def __repr__(self):
         return f"<Branch id={self.id} type={self.type}>"
@@ -53,6 +71,11 @@ class Commit(Base):
     attribute_id_in = Column(Integer, ForeignKey("db_attributes.id"))
     attribute_id_out = Column(Integer, ForeignKey("db_attributes.id"))
     create_ts = Column(DateTime, default=datetime.utcnow, nullable=False)
+    sql_up = Column(String)
+    sql_down = Column(String)
+
+    attribute_out: DbAttributes = relationship("DbAttributes", foreign_keys=[attribute_id_out])
+    attribute_in: DbAttributes = relationship("DbAttributes", foreign_keys=[attribute_id_in])
 
     next_commit: List[Commit]
     prev_commit: Commit = relationship("Commit", foreign_keys=[prev_commit_id], backref="next_commit", remote_side=id)

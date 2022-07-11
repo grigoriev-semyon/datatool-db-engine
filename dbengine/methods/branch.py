@@ -2,7 +2,8 @@ import logging
 
 from sqlalchemy.orm import Session
 
-from dbengine.exceptions import BranchError, IncorrectBranchType, BranchNotFoundError
+from dbengine.exceptions import BranchError, IncorrectBranchType, BranchNotFoundError, MergeError, MigrationError, \
+    FatalMigrationError
 from dbengine.models import Branch, BranchTypes, Commit
 
 logger = logging.getLogger(__name__)
@@ -31,7 +32,7 @@ def create_branch(name, *, session: Session) -> Branch:
 
     Тип ветки WIP, название ветки `name`
     """
-    s = session.query(Branch).filter(Branch.name == BranchTypes.MAIN).one_or_none()
+    s = session.query(Branch).filter(Branch.type == BranchTypes.MAIN).one_or_none()
     if not s:
         raise BranchError("Main branch does not exists")
     last_commit = session.query(Commit).filter(Commit.branch_id == 1).order_by(Commit.id.desc()).first()
@@ -45,15 +46,30 @@ def create_branch(name, *, session: Session) -> Branch:
     return new_branch
 
 
-def request_merge_branch(branch: Branch, *, session: Session) -> Branch:
+def request_merge_branch(branch: Branch, *, session: Session, test_connector) -> Branch:
     """Поменять тип ветки на MR
 
     Только если сейчас WIP
     """
     if branch.type != BranchTypes.WIP:
         raise IncorrectBranchType("request merge", "main")
+    if check_conflicts(branch, session=session):
+        raise MergeError(branch.id)
+    rollback, upgrade_exception = [], None
+    test_connector.generate_migration(branch)
+    session.flush()
+    try:
+        rollback = test_connector.upgrade(branch.commits)
+    except MigrationError as e:
+        upgrade_exception = e
+    try:
+        test_connector.downgrade(rollback)
+    except MigrationError:
+        raise FatalMigrationError
+        # TODO: удаляем все запоротые таблицы и создаем их заново
+    if upgrade_exception:
+        raise upgrade_exception
     branch.type = BranchTypes.MR
-    session.query(Branch).filter(Branch.id == branch.id).update({"type": BranchTypes.MR})
     session.flush()
     logger.debug("request_merge_branch")
     return branch
@@ -67,23 +83,54 @@ def unrequest_merge_branch(branch: Branch, *, session: Session) -> Branch:
     if branch.type != BranchTypes.MR:
         raise IncorrectBranchType("Unreguest merge", branch.name)
     branch.type = BranchTypes.WIP
-    session.query(Branch).filter(Branch.id == branch.id).update({"type": BranchTypes.WIP})
     session.flush()
 
     logger.debug("unrequest_merge_branch")
     return branch
 
 
-def ok_branch(branch: Branch, *, session: Session) -> Branch:
+def ok_branch(branch: Branch, *, session: Session, test_connector, prod_connector) -> Branch:
     """Поменять тип ветки на MERGED
 
     Только если сейчас MR
     """
     if branch.type != BranchTypes.MR:
         raise IncorrectBranchType("Confirm merge", branch.name)
-    branch.type = BranchTypes.MERGED
-    session.query(Branch).filter(Branch.id == branch.id).update({"type": BranchTypes.MERGED})
+    if check_conflicts(branch, session=session):
+        raise MergeError(branch.id)
+    prod_connector.generate_migration(branch)
     session.flush()
+    rollback, upgrade_exception = [], None
+    try:
+        rollback = test_connector.upgrade(branch.commits)
+    except MigrationError as e:
+        upgrade_exception = e
+    if upgrade_exception:
+        try:
+            test_connector.downgrade(rollback)
+        except MigrationError:
+            raise FatalMigrationError
+            # TODO: удаляем все запоротые таблицы и создаем их заново
+        raise upgrade_exception
+    rollback, upgrade_exception = [], None
+    try:
+        rollback = prod_connector.upgrade(branch.commits)
+    except MigrationError as e:
+        upgrade_exception = e
+    if upgrade_exception:
+        try:
+            prod_connector.downgrade(rollback)
+        except MigrationError:
+            raise FatalMigrationError
+            # TODO: удаляем все запоротые таблицы и создаем их заново
+        raise upgrade_exception
+    branch.type = BranchTypes.MERGED
+    session.flush()
+    commits_list = []
+    for row in branch.commits:
+        commits_list.append(row)
+        if row.prev_commit.branch.id == 1:
+            break
     s = session.query(Commit).filter(Commit.branch_id == branch.id).order_by(Commit.id).all()
     for row in s:
         new_commit = Commit(
@@ -107,9 +154,34 @@ def ok_branch(branch: Branch, *, session: Session) -> Branch:
 
 
 def get_branch(id: int, *, session: Session) -> Branch:
-    """Return branch by id or name"""
+    """Return branch by id"""
     logger.debug("get_branch")
-    result = session.query(Branch).get(id)
+    result = session.query(Branch).filter(Branch.id == id).one_or_none()
     if not result:
         raise BranchNotFoundError(id)
     return result
+
+
+def check_conflicts(branch: Branch, session: Session):
+    """
+    Checking conflicts with main branch
+    """
+    main = get_branch(1, session=session)
+    entities_changed_branch = set()
+    entities_changed_main = set()
+
+    for c in branch.commits:
+        if (c.attribute_in or c.attribute_out) is not None:
+            entities_changed_branch.add((c.attribute_in or c.attribute_out).table.id)
+        if c.prev_commit.id == main.id:
+            break
+    for c in main.commits:
+        if main.last_commit.id == branch.first_commit.prev_commit.id:
+            break
+        if (c.attribute_in or c.attribute_out) is not None:
+            entities_changed_main.add((c.attribute_in or c.attribute_out).table.id)
+        if c.prev_commit.id == branch.first_commit.prev_commit.id:
+            break
+    if len(entities_changed_branch & entities_changed_main) == 0:
+        return False
+    return True
