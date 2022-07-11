@@ -7,7 +7,7 @@ from sqlalchemy.engine import create_engine
 from sqlalchemy.exc import SQLAlchemyError, DBAPIError
 from sqlalchemy.future import Connection
 
-from dbengine.exceptions import MergeError, MigrationError
+from dbengine.exceptions import MigrationError
 from dbengine.methods import get_table
 from dbengine.models.branch import Branch, CommitActionTypes, Commit
 from dbengine.models.entity import AttributeTypes
