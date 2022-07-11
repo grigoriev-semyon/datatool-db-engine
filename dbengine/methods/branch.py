@@ -4,7 +4,8 @@ from typing import Tuple, Optional, List
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session
 
-from dbengine.exceptions import BranchError, IncorrectBranchType, BranchNotFoundError, MergeError
+from dbengine.exceptions import BranchError, IncorrectBranchType, BranchNotFoundError, MergeError, MigrationError, \
+    FatalMigrationError
 from dbengine.methods.column import get_columns, get_column
 from dbengine.methods.table import get_table, get_tables
 from dbengine.models import Branch, BranchTypes, Commit
@@ -60,35 +61,20 @@ def request_merge_branch(branch: Branch, *, session: Session, test_connector) ->
         raise IncorrectBranchType("request merge", "main")
     if check_conflicts(branch, session=session):
         raise MergeError(branch.id)
-    commits, lines_up, lines_down, rollback = [], [], [], []
+    rollback, upgrade_exception = [], None
     test_connector.generate_migration(branch)
     session.flush()
-    for row in branch.commits:
-        if row.sql_up is not None and row.sql_down is not None:
-            commits.append(row)
-        if row.prev_commit.branch_id == 1:
-            break
-    for row in commits:
-        for line in reversed(row.sql_up.splitlines()):
-            lines_up.append(line)
-        for line in (row.sql_down.splitlines()):
-            lines_down.append(line)
-    i = 0
-    lines_down.reverse()
-    for row in lines_up.__reversed__():
-        try:
-            test_connector.execute(row)
-            rollback.append(lines_down[i])
-            i += 1
-        except DBAPIError:
-            for s in rollback.__reversed__():
-                test_connector.execute(s)
-            raise MergeError(branch.id)
-    for row in rollback.__reversed__():
-        try:
-            test_connector.execute(row)
-        except DBAPIError:
-            raise MergeError
+    try:
+        rollback = test_connector.upgrade(branch.commits)
+    except MigrationError as e:
+        upgrade_exception = e
+    try:
+        test_connector.downgrade(rollback)
+    except MigrationError:
+        raise FatalMigrationError
+        # TODO: удаляем все запоротые таблицы и создаем их заново
+    if upgrade_exception:
+        raise upgrade_exception
     branch.type = BranchTypes.MR
     session.flush()
     logger.debug("request_merge_branch")
@@ -118,40 +104,32 @@ def ok_branch(branch: Branch, *, session: Session, test_connector, prod_connecto
         raise IncorrectBranchType("Confirm merge", branch.name)
     if check_conflicts(branch, session=session):
         raise MergeError(branch.id)
-    commits, lines_up, lines_down, rollback = [], [], [], []
     prod_connector.generate_migration(branch)
     session.flush()
-    for row in branch.commits:
-        if row.sql_up is not None and row.sql_down is not None:
-            commits.append(row)
-        if row.prev_commit.branch_id == 1:
-            break
-    for row in commits:
-        for line in reversed(row.sql_up.splitlines()):
-            lines_up.append(line)
-        for line in (row.sql_down.splitlines()):
-            lines_down.append(line)
-    i = 0
-    lines_down.reverse()
-    for row in lines_up.__reversed__():
+    rollback, upgrade_exception = [], None
+    try:
+        rollback = test_connector.upgrade(branch.commits)
+    except MigrationError as e:
+        upgrade_exception = e
+    if upgrade_exception:
         try:
-            test_connector.execute(row)
-            rollback.append(lines_down[i])
-            i += 1
-        except DBAPIError:
-            for s in rollback.__reversed__():
-                test_connector.execute(s)
-            raise MergeError(branch.id)
-    rollback = []
-    i = 0
-    for row in lines_up.__reversed__():
+            test_connector.downgrade(rollback)
+        except MigrationError:
+            raise FatalMigrationError
+            # TODO: удаляем все запоротые таблицы и создаем их заново
+        raise upgrade_exception
+    rollback, upgrade_exception = [], None
+    try:
+        rollback = prod_connector.upgrade(branch.commits)
+    except MigrationError as e:
+        upgrade_exception = e
+    if upgrade_exception:
         try:
-            prod_connector.execute(row)
-            rollback.append(lines_down[i])
-        except DBAPIError:
-            for s in rollback.__reversed__():
-                prod_connector.execute(s)
-            raise MergeError(branch.id)
+            prod_connector.downgrade(rollback)
+        except MigrationError:
+            raise FatalMigrationError
+            # TODO: удаляем все запоротые таблицы и создаем их заново
+        raise upgrade_exception
     branch.type = BranchTypes.MERGED
     session.flush()
     commits_list = []

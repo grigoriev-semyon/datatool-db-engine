@@ -1,12 +1,13 @@
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import Final, Tuple, Optional
+from typing import Final, Tuple, Optional, List
 
 from pydantic import AnyUrl
 from sqlalchemy.engine import create_engine
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, DBAPIError
 from sqlalchemy.future import Connection
 
+from dbengine.exceptions import MergeError, MigrationError
 from dbengine.methods import get_table
 from dbengine.models.branch import Branch, CommitActionTypes, Commit
 from dbengine.models.entity import AttributeTypes
@@ -176,6 +177,34 @@ class IDbConnector(metaclass=ABCMeta):
         Execute Sql code
         """
         self.__coordinated_connection.execute(str_up)
+
+    def upgrade(self, commits: List[Commit]):
+        rollback, commits_up, commits_down = [], [], []
+        for row in commits:
+            if row.sql_up is not None and row.sql_down is not None:
+                for line in reversed(row.sql_up.splitlines()):
+                    commits_up.append(line)
+                for line in row.sql_down.splitlines():
+                    commits_down.append(line)
+            if row.prev_commit.branch_id == 1:
+                break
+        i = 0
+        commits_down.reverse()
+        for row in commits_up.__reversed__():
+            try:
+                self.__coordinated_connection.execute(row)
+                rollback.append(commits_down[i])
+                i += 1
+            except DBAPIError:
+                raise MigrationError
+        return rollback
+
+    def downgrade(self, rollback: List[str]):
+        for row in rollback.__reversed__():
+            try:
+                self.__coordinated_connection.execute(row)
+            except DBAPIError:
+                raise MigrationError
 
 
 class PostgreConnector(IDbConnector):

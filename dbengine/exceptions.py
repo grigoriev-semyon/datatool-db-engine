@@ -66,3 +66,13 @@ class ColumnDeleted(ColumnError):
 class NotSupportedSchemeError(Exception):
     def __init__(self, message="This scheme in not supported"):
         super().__init__(message)
+
+
+class MigrationError(BranchError):
+    def __init__(self, message="Migration error occurred"):
+        super().__init__(message)
+
+
+class FatalMigrationError(MigrationError):
+    def __init__(self, message = "Failed to create tables and failed to rollback version back"):
+        super().__init__(message)
