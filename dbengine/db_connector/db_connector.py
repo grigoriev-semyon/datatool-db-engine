@@ -230,4 +230,4 @@ class PostgreConnector(IDbConnector):
         return f"{first_query}{second_query}"
 
 
-CONNECTOR_DICT: Final = {"postgresql": PostgreConnector}
+CONNECTOR_DICT: Final[str, IDbConnector] = {"postgresql": PostgreConnector}
