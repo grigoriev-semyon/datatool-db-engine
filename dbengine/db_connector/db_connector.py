@@ -172,12 +172,6 @@ class IDbConnector(metaclass=ABCMeta):
                     row.sql_up = self._delete_column(tablename, name1)
                     row.sql_down = self._create_column(tablename, name1, datatype1)
 
-    def execute(self, str_up: str):
-        """
-        Execute Sql code
-        """
-        self.__coordinated_connection.execute(str_up)
-
     def upgrade(self, commits: List[Commit]):
         rollback, commits_up, commits_down = [], [], []
         for row in commits:
