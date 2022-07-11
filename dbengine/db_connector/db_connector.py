@@ -1,6 +1,6 @@
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import Final, Tuple, Optional, List
+from typing import Final, Tuple, Optional, List, Dict
 
 from pydantic import AnyUrl
 from sqlalchemy.engine import create_engine
@@ -230,4 +230,4 @@ class PostgreConnector(IDbConnector):
         return f"{first_query}{second_query}"
 
 
-CONNECTOR_DICT: Final[str, IDbConnector] = {"postgresql": PostgreConnector}
+CONNECTOR_DICT: Final[Dict[str, IDbConnector]] = {"postgresql": PostgreConnector}
